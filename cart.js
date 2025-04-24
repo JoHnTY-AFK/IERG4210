@@ -143,7 +143,13 @@ document.addEventListener('click', (event) => {
                 updateCartUI();
 
                 const form = document.getElementById('paypal-form');
-                console.log('PayPal form data:', new FormData(form)); // Log form data before submission
+                // Improved logging of form data
+                const formData = new FormData(form);
+                const formDataObject = {};
+                for (let [key, value] of formData.entries()) {
+                    formDataObject[key] = value;
+                }
+                console.log('PayPal form data (before submission):', formDataObject);
                 form.submit();
             })
             .catch(err => {
