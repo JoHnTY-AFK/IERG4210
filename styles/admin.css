@@ -12,16 +12,16 @@
   --card-border: rgba(255, 255, 255, 0.2);
   --glow-color: rgba(0, 212, 255, 0.5);
   --shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  --transition: all 0.3s ease; /* Retained for other hover effects */
+  --transition: all 0.3s ease;
 }
 
 /* General Styles */
 body {
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, var(--primary-bg), var(--secondary-bg));
+  background: linear-gradient(135deg, var(--primary-bg), var(--secondary-bg)) !important; /* Enforce dark background */
   margin: 0;
   padding: 0;
-  color: var(--text-color);
+  color: var(--text-color) !important; /* Enforce text color */
   min-height: 100vh;
 }
 
@@ -30,7 +30,7 @@ body {
   max-width: 900px;
   margin: 20px auto;
   padding: 20px;
-  background: var(--card-bg);
+  background: var(--card-bg) !important; /* Enforce glassmorphism background */
   backdrop-filter: blur(10px);
   border: 1px solid var(--card-border);
   border-radius: 15px;
@@ -61,7 +61,7 @@ h2 {
 form {
   margin-bottom: 20px;
   padding: 20px;
-  background: var(--card-bg);
+  background: var(--card-bg) !important; /* Enforce glassmorphism background */
   backdrop-filter: blur(10px);
   border: 1px solid var(--card-border);
   border-radius: 15px;
@@ -73,7 +73,7 @@ form label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-color) !important; /* Enforce text color */
   font-size: 0.9em;
 }
 
@@ -87,9 +87,16 @@ form select {
   border: 1px solid var(--card-border);
   border-radius: 6px;
   font-size: 0.9em;
-  background: var(--card-bg);
-  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.05) !important; /* Slightly darker input background for contrast */
+  color: var(--text-color) !important; /* Enforce text color */
   transition: var(--transition);
+}
+
+form input[type="text"]::placeholder,
+form input[type="number"]::placeholder,
+form textarea::placeholder,
+form select::placeholder {
+  color: rgba(245, 245, 245, 0.5); /* Lighter placeholder text for visibility */
 }
 
 form input[type="text"]:focus,
@@ -109,8 +116,8 @@ form textarea {
 
 form input[type="file"] {
   padding: 5px;
-  background: var(--card-bg);
-  color: var(--text-color);
+  background: var(--card-bg) !important; /* Enforce background */
+  color: var(--text-color) !important; /* Enforce text color */
 }
 
 /* Error Message */
@@ -197,7 +204,7 @@ li:hover {
 .admin-orders {
   margin-top: 20px;
   padding: 20px;
-  background: var(--card-bg);
+  background: var(--card-bg) !important; /* Enforce glassmorphism background */
   backdrop-filter: blur(10px);
   border: 1px solid var(--card-border);
   border-radius: 15px;
@@ -232,11 +239,11 @@ li:hover {
 .admin-orders li p {
   margin: 5px 0;
   font-size: 0.9em;
-  color: var(--text-color);
+  color: var(--text-color) !important; /* Enforce text color */
 }
 
 .admin-orders li p strong {
-  color: var(--text-color);
+  color: var(--text-color) !important; /* Enforce text color */
   font-weight: 600;
 }
 
