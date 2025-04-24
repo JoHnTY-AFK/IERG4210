@@ -104,7 +104,8 @@ document.addEventListener('change', (event) => {
 });
 
 document.addEventListener('click', (event) => {
-    if (event.target.className === 'checkout') {
+    if (event.target.classList.contains('checkout')) {
+        console.log('Checkout button clicked');
         event.preventDefault();
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         if (cart.length === 0) {
@@ -136,21 +137,31 @@ document.addEventListener('click', (event) => {
                 return response.json();
             })
             .then(data => {
+                const form = document.getElementById('paypal-form');
                 document.getElementById('invoice').value = data.orderID;
                 document.getElementById('custom').value = data.digest;
 
-                localStorage.removeItem('cart');
-                updateCartUI();
-
-                const form = document.getElementById('paypal-form');
-                // Improved logging of form data
+                // Log form data before submission
                 const formData = new FormData(form);
                 const formDataObject = {};
                 for (let [key, value] of formData.entries()) {
                     formDataObject[key] = value;
                 }
                 console.log('PayPal form data (before submission):', formDataObject);
+
+                // Validate that cart items are present
+                if (!formDataObject['item_name_1']) {
+                    console.error('No cart items found in form data');
+                    alert('Error: Cart items are missing. Please try adding items again.');
+                    return;
+                }
+
+                // Submit the form before clearing the cart
                 form.submit();
+
+                // Clear cart and update UI after submission
+                localStorage.removeItem('cart');
+                updateCartUI();
             })
             .catch(err => {
                 console.error('Checkout error:', err);
