@@ -1,79 +1,49 @@
-/* Import Modern Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
-
-/* CSS Variables for Theming (Dark Mode Only) */
-:root {
-  --primary-bg: #1A1A2E;
-  --secondary-bg: #16213E;
-  --accent-color: #00D4FF;
-  --highlight-color: #6E44FF;
-  --text-color: #F5F5F5;
-  --card-bg: rgba(255, 255, 255, 0.1);
-  --card-border: rgba(255, 255, 255, 0.2);
-  --glow-color: rgba(0, 212, 255, 0.5);
-  --shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  --transition: all 0.3s ease;
-}
-
 /* General Styles */
 body {
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, var(--primary-bg), var(--secondary-bg)) !important; /* Enforce dark background */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff; /* White background */
   margin: 0;
   padding: 0;
-  color: var(--text-color) !important; /* Enforce text color */
-  min-height: 100vh;
+  color: #333; /* Dark text for contrast */
 }
 
-/* Main Container */
+/* Main container (not explicitly in admin.html, but applied to body for consistency) */
 body {
-  max-width: 900px;
+  max-width: 800px;
   margin: 20px auto;
   padding: 20px;
-  background: var(--card-bg) !important; /* Enforce glassmorphism background */
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--card-border);
-  border-radius: 15px;
-  box-shadow: var(--shadow);
-}
-
-/* Headings */
-h1, h2 {
-  font-family: 'Orbitron', sans-serif;
-  text-align: center;
-  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background-color: #ffffff; /* White container background */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  border-radius: 8px;
 }
 
 h1 {
-  font-size: 2.2em;
-  margin-bottom: 20px;
-}
-
-h2 {
-  font-size: 1.6em;
+  text-align: center;
+  color: #4CAF50; /* Green color for headings */
+  font-size: 2em;
   margin-bottom: 15px;
 }
 
-/* Form Styles */
+h2 {
+  color: #4CAF50; /* Green color for subheadings */
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+/* Form Styles (applied to #product-form and #category-form) */
 form {
   margin-bottom: 20px;
   padding: 20px;
-  background: var(--card-bg) !important; /* Enforce glassmorphism background */
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--card-border);
-  border-radius: 15px;
-  box-shadow: var(--shadow);
-  animation: fadeIn 0.5s ease-in-out;
+  background-color: #f9f9f9; /* Light gray form background */
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
 }
 
 form label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: var(--text-color) !important; /* Enforce text color */
+  color: #555; /* Dark gray for labels */
   font-size: 0.9em;
 }
 
@@ -81,81 +51,70 @@ form input[type="text"],
 form input[type="number"],
 form textarea,
 form select {
-  width: 60%;
+  width: 60%; /* Shorter input bars */
   padding: 10px;
   margin-bottom: 15px;
-  border: 1px solid var(--card-border);
+  border: 1px solid #ddd; /* Light border */
   border-radius: 6px;
   font-size: 0.9em;
-  background: rgba(255, 255, 255, 0.05) !important; /* Slightly darker input background for contrast */
-  color: var(--text-color) !important; /* Enforce text color */
-  transition: var(--transition);
-}
-
-form input[type="text"]::placeholder,
-form input[type="number"]::placeholder,
-form textarea::placeholder,
-form select::placeholder {
-  color: rgba(245, 245, 245, 0.5); /* Lighter placeholder text for visibility */
+  background-color: #ffffff; /* White input background */
+  color: #333; /* Dark text for inputs */
+  transition: border-color 0.3s ease;
 }
 
 form input[type="text"]:focus,
 form input[type="number"]:focus,
 form textarea:focus,
 form select:focus {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 5px var(--glow-color);
+  border-color: #4CAF50; /* Green border on focus */
   outline: none;
 }
 
 form textarea {
   resize: vertical;
   min-height: 100px;
-  width: 60%;
+  width: 60%; /* Shorter textarea */
 }
 
 form input[type="file"] {
   padding: 5px;
-  background: var(--card-bg) !important; /* Enforce background */
-  color: var(--text-color) !important; /* Enforce text color */
+  background-color: #ffffff; /* White file input background */
+  color: #333; /* Dark text for file input */
 }
 
-/* Error Message */
+/* Error Message Styles */
 .error {
-  color: #FF4B2B;
+  color: red;
   font-size: 0.9em;
   margin-bottom: 15px;
 }
 
-/* Buttons */
+/* Button Styles */
 button {
   display: inline-block;
   padding: 10px 20px;
   font-size: 0.9em;
   font-weight: 600;
-  color: var(--text-color);
-  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
+  color: #fff;
+  background-color: #4CAF50; /* Green button background for submit buttons */
   border: none;
-  border-radius: 25px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 0 10px var(--glow-color);
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px var(--glow-color);
+  background-color: #45a049; /* Darker green on hover */
 }
 
-/* Delete Button */
+/* Delete Button Styles (specific to buttons inside product/category lists) */
 ul button {
-  background: linear-gradient(90deg, #FF416C, #FF4B2B);
-  padding: 5px 10px;
-  box-shadow: 0 0 10px rgba(255, 65, 108, 0.5);
+  background-color: #e74c3c; /* Red for delete button */
+  padding: 5px 10px; /* Smaller padding for delete buttons */
 }
 
 ul button:hover {
-  box-shadow: 0 0 15px rgba(255, 65, 108, 0.7);
+  background-color: #c0392b; /* Darker red on hover */
 }
 
 /* List Styles */
@@ -167,52 +126,100 @@ ul {
 li {
   margin: 10px 0;
   padding: 10px;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
+  border: 1px solid #ddd; /* Light border instead of #ccc */
+  border-radius: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  transition: var(--transition);
-}
-
-li:hover {
-  box-shadow: 0 4px 15px var(--glow-color);
+  background-color: #ffffff; /* White background for list items */
 }
 
 /* Admin Back Link */
+.admin-back-link {
+  text-align: center;
+  margin: -15px 0 20px 0;
+}
+
 .admin-back-link a {
   display: inline-block;
   padding: 10px 20px;
-  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
-  color: var(--text-color);
+  background-color: #007bff;
+  color: white;
   text-decoration: none;
-  border-radius: 25px;
+  border-radius: 5px;
   font-size: 0.9em;
   font-weight: 600;
-  transition: var(--transition);
-  box-shadow: 0 0 10px var(--glow-color);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .admin-back-link a:hover {
+  background-color: #0056b3;
   transform: translateY(-2px);
-  box-shadow: 0 0 15px var(--glow-color);
   text-decoration: none;
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  body {
+      padding: 15px;
+  }
+
+  h1 {
+      font-size: 1.8em;
+  }
+
+  h2 {
+      font-size: 1.3em;
+  }
+
+  form {
+      padding: 15px;
+  }
+
+  form input[type="text"],
+  form input[type="number"],
+  form textarea,
+  form select {
+      width: 100%; /* Full width on smaller screens */
+  }
+
+  button {
+      width: 100%;
+      padding: 12px;
+  }
+}
+
+/* Animation for Forms */
+form {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+      transform: translateY(10px);
+  }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+
+/* New Section for Admin Orders List */
 
 /* Admin Orders Section */
 .admin-orders {
   margin-top: 20px;
   padding: 20px;
-  background: var(--card-bg) !important; /* Enforce glassmorphism background */
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--card-border);
-  border-radius: 15px;
-  box-shadow: var(--shadow);
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .admin-orders h2 {
   font-size: 1.6em;
+  color: #4CAF50;
   margin-bottom: 15px;
   text-align: center;
 }
@@ -224,26 +231,26 @@ li:hover {
 }
 
 .admin-orders li {
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
   padding: 15px;
   margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  transition: var(--transition);
+  background-color: #fff;
+  transition: box-shadow 0.3s ease;
 }
 
 .admin-orders li:hover {
-  box-shadow: 0 4px 15px var(--glow-color);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .admin-orders li p {
   margin: 5px 0;
   font-size: 0.9em;
-  color: var(--text-color) !important; /* Enforce text color */
+  color: #555;
 }
 
 .admin-orders li p strong {
-  color: var(--text-color) !important; /* Enforce text color */
+  color: #333;
   font-weight: 600;
 }
 
@@ -253,51 +260,17 @@ li:hover {
 }
 
 .admin-orders .status-completed {
-  color: var(--accent-color);
+  color: #4CAF50;
   font-weight: 600;
 }
 
 .admin-orders .status-failed {
-  color: #FF4B2B;
+  color: #e74c3c;
   font-weight: 600;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsive Design */
+/* Responsive Design for Admin Orders */
 @media (max-width: 768px) {
-  body {
-    padding: 15px;
-  }
-
-  h1 {
-    font-size: 1.8em;
-  }
-
-  h2 {
-    font-size: 1.3em;
-  }
-
-  form {
-    padding: 15px;
-  }
-
-  form input[type="text"],
-  form input[type="number"],
-  form textarea,
-  form select {
-    width: 100%;
-  }
-
-  button {
-    width: 100%;
-    padding: 12px;
-  }
-
   .admin-orders {
     padding: 15px;
   }
