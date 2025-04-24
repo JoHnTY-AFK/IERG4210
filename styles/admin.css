@@ -1,120 +1,158 @@
 /* General Styles */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #ffffff; /* White background */
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* Futuristic dark gradient */
   margin: 0;
   padding: 0;
-  color: #333; /* Dark text for contrast */
+  color: #e0e0e0; /* Light text for contrast */
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Main container (not explicitly in admin.html, but applied to body for consistency) */
+/* Main container */
 body {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #ffffff; /* White container background */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  border-radius: 8px;
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05); /* Glassmorphism effect */
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 h1 {
   text-align: center;
-  color: #4CAF50; /* Green color for headings */
-  font-size: 2em;
-  margin-bottom: 15px;
+  color: #00ff88; /* Neon green */
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
 }
 
 h2 {
-  color: #4CAF50; /* Green color for subheadings */
-  font-size: 1.5em;
-  margin-bottom: 10px;
+  color: #00ff88;
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
 }
 
-/* Form Styles (applied to #product-form and #category-form) */
+/* Form Styles */
 form {
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: #f9f9f9; /* Light gray form background */
-  border-radius: 8px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+  margin-bottom: 30px;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.1); /* Glassmorphism */
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideIn 0.6s ease-out;
 }
 
 form label {
   display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #555; /* Dark gray for labels */
-  font-size: 0.9em;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: #b0b0b0; /* Softer gray */
+  font-size: 0.95em;
 }
 
 form input[type="text"],
 form input[type="number"],
 form textarea,
 form select {
-  width: 60%; /* Shorter input bars */
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd; /* Light border */
-  border-radius: 6px;
-  font-size: 0.9em;
-  background-color: #ffffff; /* White input background */
-  color: #333; /* Dark text for inputs */
-  transition: border-color 0.3s ease;
+  width: 80%; /* Wider inputs for better usability */
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.95em;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+  transition: all 0.3s ease;
 }
 
 form input[type="text"]:focus,
 form input[type="number"]:focus,
 form textarea:focus,
 form select:focus {
-  border-color: #4CAF50; /* Green border on focus */
+  border-color: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  background: rgba(255, 255, 255, 0.1);
   outline: none;
 }
 
 form textarea {
   resize: vertical;
-  min-height: 100px;
-  width: 60%; /* Shorter textarea */
+  min-height: 120px;
+  width: 80%;
 }
 
 form input[type="file"] {
-  padding: 5px;
-  background-color: #ffffff; /* White file input background */
-  color: #333; /* Dark text for file input */
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+  border-radius: 8px;
 }
 
 /* Error Message Styles */
 .error {
-  color: red;
+  color: #ff4d4d; /* Neon red */
   font-size: 0.9em;
   margin-bottom: 15px;
+  text-shadow: 0 0 5px rgba(255, 77, 77, 0.3);
 }
 
 /* Button Styles */
 button {
+  position: relative;
   display: inline-block;
-  padding: 10px 20px;
-  font-size: 0.9em;
+  padding: 12px 24px;
+  font-size: 0.95em;
   font-weight: 600;
   color: #fff;
-  background-color: #4CAF50; /* Green button background for submit buttons */
+  background: linear-gradient(45deg, #00ff88, #00b4d8); /* Neon gradient */
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 button:hover {
-  background-color: #45a049; /* Darker green on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+  background: linear-gradient(45deg, #00b4d8, #00ff88);
 }
 
-/* Delete Button Styles (specific to buttons inside product/category lists) */
+button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+button:hover::after {
+  width: 200px;
+  height: 200px;
+}
+
+/* Delete Button Styles */
 ul button {
-  background-color: #e74c3c; /* Red for delete button */
-  padding: 5px 10px; /* Smaller padding for delete buttons */
+  background: linear-gradient(45deg, #ff4d4d, #d90429); /* Neon red gradient */
+  padding: 8px 16px;
 }
 
 ul button:hover {
-  background-color: #c0392b; /* Darker red on hover */
+  background: linear-gradient(45deg, #d90429, #ff4d4d);
+  box-shadow: 0 0 15px rgba(255, 77, 77, 0.6);
 }
 
 /* List Styles */
@@ -124,104 +162,65 @@ ul {
 }
 
 li {
-  margin: 10px 0;
-  padding: 10px;
-  border: 1px solid #ddd; /* Light border instead of #ccc */
-  border-radius: 5px;
+  margin: 15px 0;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff; /* White background for list items */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+li:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
 }
 
 /* Admin Back Link */
 .admin-back-link {
   text-align: center;
-  margin: -15px 0 20px 0;
+  margin: -10px 0 25px 0;
 }
 
 .admin-back-link a {
   display: inline-block;
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
+  padding: 12px 24px;
+  background: linear-gradient(45deg, #007bff, #00b4d8);
+  color: #fff;
   text-decoration: none;
-  border-radius: 5px;
-  font-size: 0.9em;
+  border-radius: 8px;
+  font-size: 0.95em;
   font-weight: 600;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
 }
 
 .admin-back-link a:hover {
-  background-color: #0056b3;
-  transform: translateY(-2px);
-  text-decoration: none;
+  background: linear-gradient(45deg, #00b4d8, #007bff);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.5);
 }
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  body {
-      padding: 15px;
-  }
-
-  h1 {
-      font-size: 1.8em;
-  }
-
-  h2 {
-      font-size: 1.3em;
-  }
-
-  form {
-      padding: 15px;
-  }
-
-  form input[type="text"],
-  form input[type="number"],
-  form textarea,
-  form select {
-      width: 100%; /* Full width on smaller screens */
-  }
-
-  button {
-      width: 100%;
-      padding: 12px;
-  }
-}
-
-/* Animation for Forms */
-form {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-      opacity: 0;
-      transform: translateY(10px);
-  }
-  to {
-      opacity: 1;
-      transform: translateY(0);
-  }
-}
-
-/* New Section for Admin Orders List */
 
 /* Admin Orders Section */
 .admin-orders {
-  margin-top: 20px;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-top: 30px;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-orders h2 {
-  font-size: 1.6em;
-  color: #4CAF50;
-  margin-bottom: 15px;
+  font-size: 1.8em;
+  color: #00ff88;
+  margin-bottom: 20px;
   text-align: center;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
 }
 
 .admin-orders ul {
@@ -231,59 +230,136 @@ form {
 }
 
 .admin-orders li {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 15px;
-  margin-bottom: 10px;
-  background-color: #fff;
-  transition: box-shadow 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
 }
 
 .admin-orders li:hover {
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
 }
 
 .admin-orders li p {
-  margin: 5px 0;
-  font-size: 0.9em;
-  color: #555;
+  margin: 8px 0;
+  font-size: 0.95em;
+  color: #b0b0b0;
 }
 
 .admin-orders li p strong {
-  color: #333;
+  color: #e0e0e0;
   font-weight: 600;
 }
 
 .admin-orders .status-pending {
   color: #f0ad4e;
   font-weight: 600;
+  text-shadow: 0 0 5px rgba(240, 173, 78, 0.3);
 }
 
 .admin-orders .status-completed {
-  color: #4CAF50;
+  color: #00ff88;
   font-weight: 600;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
 }
 
 .admin-orders .status-failed {
-  color: #e74c3c;
+  color: #ff4d4d;
   font-weight: 600;
+  text-shadow: 0 0 5px rgba(255, 77, 77, 0.3);
 }
 
-/* Responsive Design for Admin Orders */
+/* Responsive Design */
 @media (max-width: 768px) {
+  body {
+    padding: 20px;
+    margin: 20px;
+  }
+
+  h1 {
+    font-size: 2em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  form {
+    padding: 20px;
+  }
+
+  form input[type="text"],
+  form input[type="number"],
+  form textarea,
+  form select {
+    width: 100%; /* Full width on mobile */
+  }
+
+  button {
+    width: 100%;
+    padding: 14px;
+  }
+
   .admin-orders {
-    padding: 15px;
+    padding: 20px;
   }
 
   .admin-orders h2 {
-    font-size: 1.4em;
+    font-size: 1.5em;
   }
 
   .admin-orders li {
-    padding: 10px;
+    padding: 15px;
   }
 
   .admin-orders li p {
-    font-size: 0.85em;
+    font-size: 0.9em;
   }
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tooltip for Buttons */
+button[title] {
+  position: relative;
+}
+
+button[title]:hover::before {
+  content: attr(title);
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+button[title]:hover::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+  z-index: 10;
 }

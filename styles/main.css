@@ -331,8 +331,8 @@ header nav ul li a:hover {
 /* Shopping Cart */
 #shopping-cart.shopping-cart {
   display: none;
-  position: absolute;
-  top: 60px;
+  position: fixed; /* Changed to fixed to stay in viewport */
+  top: 70px; /* Adjusted to position just below the header */
   right: 20px;
   background: var(--card-bg);
   backdrop-filter: blur(10px);
