@@ -67,7 +67,7 @@ app.use((req, res, next) => {
 
 const validateCsrfToken = (req, res, next) => {
     const csrfToken = req.cookies.csrfToken;
-    const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'];
+    const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.cookies.csrfToken;
     if (!csrfToken || !bodyToken || csrfToken !== bodyToken) {
         return res.status(403).send('CSRF token validation failed');
     }
@@ -376,8 +376,10 @@ app.post('/change-password', validateCsrfToken, authenticate, async (req, res) =
 
 app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) => {
     try {
+        console.log('Validate-order request body:', req.body);
         const { items } = req.body;
         if (!items || !Array.isArray(items)) {
+            console.log('Invalid items detected');
             return res.status(400).json({ error: 'Invalid items' });
         }
 
@@ -390,12 +392,16 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
             const salt = crypto.randomBytes(16).toString('hex');
 
             for (const item of items) {
+                console.log('Processing item:', item);
                 if (!item.pid || !Number.isInteger(item.quantity) || item.quantity <= 0) {
+                    console.log('Invalid item data:', item);
                     throw new Error('Invalid item data');
                 }
 
                 const [products] = await connection.query('SELECT pid, price FROM products WHERE pid = ?', [item.pid]);
+                console.log('Database query result for pid', item.pid, ':', products);
                 if (products.length === 0) {
+                    console.log('Product not found:', item.pid);
                     throw new Error(`Product ${item.pid} not found`);
                 }
 
@@ -408,7 +414,6 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
                 });
             }
 
-            // Generate digest
             const dataToHash = [
                 currency,
                 merchantEmail,
@@ -416,13 +421,16 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
                 ...orderItems.map(item => `${item.pid}:${item.quantity}:${item.price}`)
             ].join('|');
             const digest = crypto.createHash('sha256').update(dataToHash).digest('hex');
+            console.log('Digest data:', dataToHash);
+            console.log('Generated digest:', digest);
 
-            // Insert order
             const userEmail = req.user ? req.user.email : null;
+            console.log('User email:', userEmail);
             const [result] = await connection.query(
                 'INSERT INTO orders (user_email, items, total_price, digest, salt, status) VALUES (?, ?, ?, ?, ?, ?)',
                 [userEmail, JSON.stringify(orderItems), totalPrice, digest, salt, 'pending']
             );
+            console.log('Order inserted, ID:', result.insertId);
 
             connection.release();
             res.json({ orderID: result.insertId, digest });

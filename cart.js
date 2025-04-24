@@ -1,6 +1,6 @@
 document.addEventListener('click', (event) => {
     if (event.target.classList.contains('add-to-cart')) {
-        const productId = event.target.getAttribute('data-pid');
+        const productId = parseInt(event.target.getAttribute('data-pid'));
         fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${productId}`)
             .then(response => {
                 if (!response.ok) throw new Error('Product fetch failed');
@@ -81,7 +81,7 @@ function updateCartUI() {
 
 document.addEventListener('change', (event) => {
     if (event.target.tagName === 'INPUT' && event.target.type === 'number') {
-        const pid = event.target.getAttribute('data-pid');
+        const pid = parseInt(event.target.getAttribute('data-pid'));
         const newQuantity = parseInt(event.target.value);
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
@@ -108,7 +108,7 @@ document.addEventListener('click', (event) => {
 
         // Validate quantities
         const items = cart.map(item => ({
-            pid: item.pid,
+            pid: parseInt(item.pid),
             quantity: item.quantity
         }));
 
