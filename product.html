@@ -16,6 +16,7 @@
                 <li><a href="#">Categories</a></li>
                 <li><a href="#">About</a></li>
                 <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
+                <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
                 <li><form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link" style="display: none;">Logout</button></form></li>
             </ul>
         </nav>
@@ -32,7 +33,6 @@
             <p id="product-price" class="price"></p>
             <p id="product-description" class="description"></p>
             <button class="add-to-cart" id="add-to-cart">Add to Cart</button>
-            <p class="back-link"><a href="/">Back to Home</a></p>
         </div>
     </section>
 
@@ -40,7 +40,6 @@
         <button class="close-cart">×</button>
         <h3>Shopping Cart</h3>
         <ul class="cart-items"></ul>
-        <button class="checkout">Checkout</button>
     </div>
 
     <footer>
@@ -49,16 +48,14 @@
 
     <script src="/cart.js"></script>
     <script>
-        // Note: Nonce is injected by server
         document.addEventListener('DOMContentLoaded', () => {
-            // Fetch CSRF token for logout form
+            // Handle CSRF token for logout
             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     const logoutForm = document.getElementById('logout-form');
                     logoutForm.insertAdjacentHTML('afterbegin', `<input type="hidden" name="csrfToken" value="${data.csrfToken}">`);
                     
-                    // Add the improved logout handler
                     logoutForm.addEventListener('submit', async (e) => {
                         e.preventDefault();
                         const button = logoutForm.querySelector('button[type="submit"]');
@@ -77,14 +74,12 @@
                             if (!response.ok) throw new Error('Logout failed');
                             
                             const result = await response.json();
-                            // Store the new CSRF token from logout response
                             if (result.csrfToken) {
                                 document.querySelector('#logout-form input[name="csrfToken"]').value = result.csrfToken;
                             }
                             window.location.href = result.redirect || '/login';
                         } catch (err) {
                             console.error('Logout error:', err);
-                            // Force a fresh CSRF token if logout fails
                             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                                 .then(res => res.json())
                                 .then(data => {
@@ -98,20 +93,21 @@
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
-            // Fetch user status
+            // Handle user status
             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/user', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     const userStatus = document.getElementById('user-status');
                     const logoutLink = document.getElementById('logout-link');
                     const adminLink = document.getElementById('admin-link');
+                    const ordersLink = document.getElementById('orders-link');
                     
                     if (data.email !== 'Guest') {
                         userStatus.textContent = 'Logout';
                         logoutLink.style.display = 'inline';
                         userStatus.style.display = 'none';
+                        ordersLink.style.display = 'inline';
                         
-                        // Only show admin link if user is admin
                         if (data.isAdmin && adminLink) {
                             adminLink.style.display = 'inline';
                         } else if (adminLink) {
@@ -121,40 +117,41 @@
                         userStatus.textContent = 'Login';
                         userStatus.style.display = 'inline';
                         logoutLink.style.display = 'none';
-                        
-                        // Hide admin link when logged out
+                        ordersLink.style.display = 'none';
                         if (adminLink) {
                             adminLink.style.display = 'none';
                         }
-                        
                         userStatus.onclick = () => window.location.href = '/login';
                     }
                 })
                 .catch(err => console.error('User fetch error:', err));
 
+            // Load product details
             const urlParams = new URLSearchParams(window.location.search);
-            let pid = urlParams.get('pid') || '1';
-            fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${pid}`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Product fetch failed');
-                    return response.json();
-                })
-                .then(product => {
-                    if (product.pid) {
+            const pid = urlParams.get('pid');
+            if (pid) {
+                fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${pid}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Product fetch failed');
+                        return response.json();
+                    })
+                    .then(product => {
                         document.getElementById('product-name').textContent = product.name;
-                        document.getElementById('product-image').src = product.image || `/images/product${pid}.jpg`;
                         document.getElementById('product-price').textContent = `$${product.price}`;
                         document.getElementById('product-description').textContent = product.description;
-                        const addToCartBtn = document.getElementById('add-to-cart');
-                        addToCartBtn.setAttribute('data-pid', pid);
-                        addToCartBtn.setAttribute('data-name', product.name);
-                        addToCartBtn.setAttribute('data-price', product.price);
-                    } else {
-                        document.getElementById('product-name').textContent = 'Product Not Found';
-                    }
-                })
-                .catch(error => console.error('Product error:', error));
+                        document.getElementById('product-image').src = product.image || `/images/product${pid}.jpg`;
+                        document.getElementById('add-to-cart').setAttribute('data-pid', pid);
+                    })
+                    .catch(err => {
+                        console.error('Product fetch error:', err);
+                        document.querySelector('.product-details').innerHTML = '<p>Error loading product</p>';
+                    });
+            } else {
+                document.querySelector('.product-details').innerHTML = '<p>No product specified</p>';
+            }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>

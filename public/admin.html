@@ -50,10 +50,11 @@
       <ul id="product-list"></ul>
       <h2>Category List</h2>
       <ul id="category-list"></ul>
+      <h2>Orders</h2>
+      <ul id="order-list"></ul>
       <script>
          let csrfToken;
          
-         // Client-side validation functions
          function validateTextInput(text, maxLength, fieldName) {
              if (!text) return `${fieldName} is required`;
              if (text.length > maxLength) return `${fieldName} must be ${maxLength} characters or less`;
@@ -63,7 +64,6 @@
          
          function validatePrice(price) {
              const num = parseFloat(price);
-            icionados
              if (isNaN(num) || num < 0) return 'Price must be a non-negative number';
              return null;
          }
@@ -81,7 +81,6 @@
                  }
              });
          
-         // Fetch CSRF token
          fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
              .then(res => res.json())
              .then(data => {
@@ -156,6 +155,31 @@
                  .catch(err => console.error('Category list error:', err));
          }
          
+         function loadOrders() {
+             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/orders', { credentials: 'include' })
+                 .then(response => {
+                     if (!response.ok) throw new Error('Orders fetch failed');
+                     return response.json();
+                 })
+                 .then(orders => {
+                     const orderList = document.getElementById('order-list');
+                     orderList.innerHTML = '';
+                     orders.forEach(order => {
+                         const items = JSON.parse(order.items).map(item => 
+                             `${item.quantity}x Product #${item.pid} ($${item.price})`
+                         ).join(', ');
+                         const li = document.createElement('li');
+                         li.innerHTML = DOMPurify.sanitize(`
+                             Order #${order.orderID} by ${order.user_email || 'Guest'} - ${items}
+                             Total: $${order.total_price.toFixed(2)} - Status: ${order.status}
+                             Created: ${new Date(order.created_at).toLocaleString()}
+                         `);
+                         orderList.appendChild(li);
+                     });
+                 })
+                 .catch(err => console.error('Orders error:', err));
+         }
+         
          document.getElementById('product-form').addEventListener('submit', (e) => {
              e.preventDefault();
              const name = document.getElementById('name').value;
@@ -166,7 +190,6 @@
              const errorDiv = document.getElementById('product-form-error');
              const isUpdate = e.target.dataset.pid;
          
-             // Client-side validation
              const nameError = validateTextInput(name, 255, 'Product name');
              const descError = validateTextInput(description, 1000, 'Description');
              const priceError = validatePrice(price);
@@ -220,7 +243,6 @@
              const errorDiv = document.getElementById('category-form-error');
              const isUpdate = e.target.dataset.catid;
          
-             // Client-side validation
              const nameError = validateTextInput(name, 255, 'Category name');
              if (nameError) {
                  errorDiv.textContent = nameError;
@@ -262,7 +284,6 @@
              const newPassword = document.getElementById('new-password').value;
              const errorDiv = document.getElementById('password-form-error');
          
-             // Client-side validation
              const currentPassError = validatePassword(currentPassword);
              const newPassError = validatePassword(newPassword);
              if (currentPassError || newPassError) {
@@ -280,7 +301,6 @@
                      if (!response.ok) {
                          return response.text().then(text => { throw new Error(text); });
                      }
-                     // Server redirects to /login
                  })
                  .catch(err => {
                      console.error('Password change error:', err);
@@ -372,8 +392,9 @@
              loadCategories();
              loadProducts();
              loadCategoryList();
+             loadOrders();
          });
       </script>
       <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353a7e07dc3b0b7',t:'MTc0NTQ3NzMxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-   </body>
+   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d62e31bd28',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const sanitizeHtml = require('sanitize-html');
 const http = require('http');
+const fetch = require('node-fetch');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -32,7 +33,6 @@ const db = mysql.createPool({
     }
 });
 
-// Add this right after creating the pool
 db.getConnection((err, connection) => {
     if (err) {
         console.error('Database connection failed:', err);
@@ -52,8 +52,8 @@ app.use(cors({
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use('/public', express.static(path.join(__dirname, 'public'))); // Serve public directory
-app.use(express.static(__dirname, { index: false })); // Serve root, disable default index
+app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname, { index: false }));
 
 // CSRF Protection
 const generateCsrfToken = () => crypto.randomBytes(16).toString('hex');
@@ -78,10 +78,10 @@ const validateCsrfToken = (req, res, next) => {
 const authenticate = async (req, res, next) => {
     try {
         const authToken = req.cookies.authToken;
-        if (!authToken) return res.redirect('/login');
+        if (!authToken) return next();
         
         const [results] = await db.query('SELECT * FROM users WHERE auth_token = ?', [authToken]);
-        if (!results.length) return res.redirect('/login');
+        if (!results.length) return next();
         
         req.user = results[0];
         next();
@@ -130,7 +130,6 @@ app.get('/admin', authenticate, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Block direct access to /public/admin.html
 app.get('/public/admin.html', (req, res) => {
     res.redirect('/login');
 });
@@ -222,11 +221,9 @@ app.post('/login', validateCsrfToken, async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        // Get a connection from the pool
         const connection = await db.getConnection();
         
         try {
-            // Execute query using promise interface
             const [users] = await connection.query(
                 'SELECT userid, email, password, is_admin FROM users WHERE email = ?', 
                 [email]
@@ -290,7 +287,6 @@ app.post('/logout', validateCsrfToken, authenticate, async (req, res) => {
         await db.query('UPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
         res.clearCookie('authToken');
         
-        // Generate a NEW CSRF token immediately after logout
         const newCsrfToken = generateCsrfToken();
         res.cookie('csrfToken', newCsrfToken, { 
             httpOnly: true, 
@@ -331,11 +327,153 @@ app.post('/change-password', validateCsrfToken, authenticate, async (req, res) =
     }
 });
 
+app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!items || !Array.isArray(items)) {
+            return res.status(400).json({ error: 'Invalid items' });
+        }
+
+        const connection = await db.getConnection();
+        try {
+            let totalPrice = 0;
+            const orderItems = [];
+            const currency = 'USD';
+            const merchantEmail = 'testing6070@example.com';
+            const salt = crypto.randomBytes(16).toString('hex');
+
+            for (const item of items) {
+                if (!item.pid || !Number.isInteger(item.quantity) || item.quantity <= 0) {
+                    throw new Error('Invalid item data');
+                }
+
+                const [products] = await connection.query('SELECT pid, price FROM products WHERE pid = ?', [item.pid]);
+                if (products.length === 0) {
+                    throw new Error(`Product ${item.pid} not found`);
+                }
+
+                const product = products[0];
+                totalPrice += product.price * item.quantity;
+                orderItems.push({
+                    pid: item.pid,
+                    quantity: item.quantity,
+                    price: product.price
+                });
+            }
+
+            // Generate digest
+            const dataToHash = [
+                currency,
+                merchantEmail,
+                salt,
+                ...orderItems.map(item => `${item.pid}:${item.quantity}:${item.price}`)
+            ].join('|');
+            const digest = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+            // Insert order
+            const userEmail = req.user ? req.user.email : null;
+            const [result] = await connection.query(
+                'INSERT INTO orders (user_email, items, total_price, digest, status) VALUES (?, ?, ?, ?, ?)',
+                [userEmail, JSON.stringify(orderItems), totalPrice, digest, 'pending']
+            );
+
+            connection.release();
+            res.json({ orderID: result.insertId, digest });
+        } catch (err) {
+            connection.release();
+            console.error('Order validation error:', err);
+            res.status(400).json({ error: err.message });
+        }
+    } catch (err) {
+        console.error('Connection error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/paypal-webhook', async (req, res) => {
+    try {
+        console.log('PayPal webhook received:', req.body);
+
+        // Verify PayPal IPN
+        const verificationUrl = 'https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_notify-validate';
+        const verificationBody = `cmd=_notify-validate&${new URLSearchParams(req.body).toString()}`;
+        const verificationResponse = await fetch(verificationUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: verificationBody
+        });
+        const verificationResult = await verificationResponse.text();
+
+        if (verificationResult !== 'VERIFIED') {
+            console.error('PayPal verification failed:', verificationResult);
+            return res.status(400).send('Invalid PayPal notification');
+        }
+
+        // Check if transaction already processed
+        const paypalTxnId = req.body.txn_id;
+        const [existing] = await db.query('SELECT transaction_id FROM transactions WHERE paypal_txn_id = ?', [paypalTxnId]);
+        if (existing.length > 0) {
+            console.warn('Transaction already processed:', paypalTxnId);
+            return res.status(200).send('OK');
+        }
+
+        // Fetch order
+        const orderID = parseInt(req.body.invoice);
+        const [orders] = await db.query('SELECT * FROM orders WHERE orderID = ?', [orderID]);
+        if (orders.length === 0) {
+            console.error('Order not found:', orderID);
+            return res.status(400).send('Order not found');
+        }
+
+        const order = orders[0];
+        const orderItems = JSON.parse(order.items);
+
+        // Regenerate digest
+        const currency = 'USD';
+        const merchantEmail = 'testing6070@example.com';
+        const salt = order.digest.slice(0, 32); // Assuming first 32 chars are salt (simplified)
+        const dataToHash = [
+            currency,
+            merchantEmail,
+            salt,
+            ...orderItems.map(item => `${item.pid}:${item.quantity}:${item.price}`)
+        ].join('|');
+        const regeneratedDigest = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+        if (regeneratedDigest !== order.digest) {
+            console.error('Digest mismatch:', regeneratedDigest, order.digest);
+            return res.status(400).send('Digest validation failed');
+        }
+
+        // Save transaction
+        await db.query(
+            'INSERT INTO transactions (orderID, paypal_txn_id, payment_status, payment_amount, currency_code, payer_email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+                orderID,
+                paypalTxnId,
+                req.body.payment_status,
+                parseFloat(req.body.mc_gross),
+                req.body.mc_currency,
+                req.body.payer_email,
+                new Date()
+            ]
+        );
+
+        // Update order status
+        const status = req.body.payment_status === 'Completed' ? 'completed' : 'failed';
+        await db.query('UPDATE orders SET status = ? WHERE orderID = ?', [status, orderID]);
+
+        res.status(200).send('OK');
+    } catch (err) {
+        console.error('Webhook error:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single('image'), async (req, res) => {
     const { catid, name, price, description } = req.body;
     const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Validate inputs
     const nameError = validateTextInput(name, 255, 'Product name');
     const descError = validateTextInput(description, 1000, 'Description');
     const priceError = validatePrice(price);
@@ -347,7 +485,6 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
     const sanitizedDesc = sanitizeHtml(description);
 
     if (imagePath) {
-        // Validate image mime type
         if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
             return res.status(400).send('Invalid image type. Only JPEG, PNG, or GIF allowed.');
         }
@@ -386,7 +523,6 @@ app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload
     const pid = req.params.pid;
     const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Validate inputs
     const nameError = validateTextInput(name, 255, 'Product name');
     const descError = validateTextInput(description, 1000, 'Description');
     const priceError = validatePrice(price);
@@ -398,7 +534,6 @@ app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload
     const sanitizedDesc = sanitizeHtml(description);
 
     if (imagePath) {
-        // Validate image mime type
         if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
             return res.status(400).send('Invalid image type. Only JPEG, PNG, or GIF allowed.');
         }

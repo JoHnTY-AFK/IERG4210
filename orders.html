@@ -3,7 +3,7 @@
    <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Dummy Shopping Website</title>
+      <title>My Orders - Dummy Shopping Website</title>
       <link rel="stylesheet" href="/styles/main.css">
       <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
    </head>
@@ -25,20 +25,16 @@
          <button id="user-status" class="user-status">Guest</button>
          <button id="cart-button" class="cart-button">Cart (0)</button>
       </header>
-      <section class="breadcrumb">
-         <p><a href="/">Home</a> > <span id="breadcrumb-category">All Categories</span></p>
+      <section class="orders">
+         <h2>My Orders</h2>
+         <ul id="order-list"></ul>
+         <p class="back-link"><a href="/">Back to Home</a></p>
       </section>
-      <section class="category-select">
-         <label for="category-select">Select Category:</label>
-         <select id="category-select">
-            <option value="">-- Select a Category --</option>
-         </select>
-      </section>
-      <section class="product-list" id="product-list"></section>
       <div id="shopping-cart" class="shopping-cart">
          <button class="close-cart">×</button>
          <h3>Shopping Cart</h3>
          <ul class="cart-items"></ul>
+         <button class="checkout">Checkout</button>
       </div>
       <footer>
          <p>© 2025 Dummy Shopping Website</p>
@@ -108,6 +104,7 @@
                          } else if (adminLink) {
                              adminLink.style.display = 'none';
                          }
+                         loadOrders(data.email);
                      } else {
                          userStatus.textContent = 'Login';
                          userStatus.style.display = 'inline';
@@ -116,80 +113,45 @@
                          if (adminLink) {
                              adminLink.style.display = 'none';
                          }
-                         userStatus.onclick = () => window.location.href = '/login';
+                         window.location.href = '/login';
                      }
                  })
                  .catch(err => console.error('User fetch error:', err));
-         
-             if (document.getElementById('category-select')) {
-                 fetch('https://ierg4210.koreacentral.cloudapp.azure.com/categories')
-                     .then(response => {
-                         if (!response.ok) throw new Error('Categories fetch failed');
-                         return response.json();
-                     })
-                     .then(categories => {
-                         const categorySelect = document.getElementById('category-select');
-                         categories.forEach(category => {
-                             const option = document.createElement('option');
-                             option.value = category.catid;
-                             option.textContent = category.name;
-                             categorySelect.appendChild(option);
-                         });
-         
-                         const urlParams = new URLSearchParams(window.location.search);
-                         const catid = urlParams.get('catid');
-                         if (catid) {
-                             categorySelect.value = catid;
-                             loadProducts(catid);
-                             document.getElementById('breadcrumb-category').textContent = categorySelect.options[categorySelect.selectedIndex].text;
-                         } else {
-                             loadProducts();
-                         }
-                     })
-                     .catch(err => console.error('Categories error:', err));
-             }
-         
-             function loadProducts(catid = null) {
-                 const url = catid ? `https://ierg4210.koreacentral.cloudapp.azure.com/products/${catid}` : 'https://ierg4210.koreacentral.cloudapp.azure.com/products';
-                 fetch(url)
-                     .then(response => {
-                         if (!response.ok) throw new Error('Products fetch failed');
-                         return response.json();
-                     })
-                     .then(products => {
-                         const productList = document.getElementById('product-list');
-                         productList.innerHTML = '';
-                         products.forEach(product => {
-                             const productDiv = document.createElement('div');
-                             productDiv.className = 'product';
-                             productDiv.innerHTML = DOMPurify.sanitize(`
-                                 <a href="/product?pid=${product.pid}">
-                                     <img src="${product.thumbnail || '/images/product' + product.pid + '.jpg'}" alt="${product.name}" class="thumbnail">
-                                     <h3>${product.name}</h3>
-                                 </a>
-                                 <p>$${product.price}</p>
-                                 <button class="add-to-cart" data-pid="${product.pid}" data-name="${product.name}" data-price="${product.price}">Add to Cart</button>
-                             `);
-                             productList.appendChild(productDiv);
-                         });
-                     })
-                     .catch(err => console.error('Products error:', err));
-             }
-         
-             document.getElementById('category-select').addEventListener('change', (e) => {
-                 const catid = e.target.value;
-                 if (catid) {
-                     history.pushState({}, '', `?catid=${catid}`);
-                     loadProducts(catid);
-                     document.getElementById('breadcrumb-category').textContent = e.target.options[e.target.selectedIndex].text;
-                 } else {
-                     history.pushState({}, '', '/');
-                     loadProducts();
-                     document.getElementById('breadcrumb-category').textContent = 'All Categories';
-                 }
-             });
          });
+         
+         function loadOrders(email) {
+             fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/orders?email=${encodeURIComponent(email)}`, { credentials: 'include' })
+                 .then(response => {
+                     if (!response.ok) throw new Error('Orders fetch failed');
+                     return response.json();
+                 })
+                 .then(orders => {
+                     const orderList = document.getElementById('order-list');
+                     orderList.innerHTML = '';
+                     if (orders.length === 0) {
+                         orderList.innerHTML = '<li>No orders found</li>';
+                         return;
+                     }
+                     orders.forEach(order => {
+                         const items = JSON.parse(order.items).map(item => 
+                             `${item.quantity}x Product #${item.pid} ($${item.price})`
+                         ).join(', ');
+                         const li = document.createElement('li');
+                         li.innerHTML = DOMPurify.sanitize(`
+                             Order #${order.orderID} - ${items}
+                             Total: $${order.total_price.toFixed(2)} - Status: ${order.status}
+                             Created: ${new Date(order.created_at).toLocaleString()}
+                         `);
+                         orderList.appendChild(li);
+                     });
+                 })
+                 .catch(err => {
+                     console.error('Orders error:', err);
+                     document.getElementById('order-list').innerHTML = '<li>Error loading orders</li>';
+                 });
+         }
       </script>
       <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style436visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
