@@ -126,6 +126,21 @@ app.get('/product', (req, res) => {
     res.sendFile(path.join(__dirname, 'product.html'));
 });
 
+app.get('/orders', authenticate, (req, res) => {
+    if (!req.user) {
+        return res.redirect('/login');
+    }
+    res.sendFile(path.join(__dirname, 'orders.html'));
+});
+
+app.get('/categories', (req, res) => {
+    res.sendFile(path.join(__dirname, 'categories.html'));
+});
+
+app.get('/about', (req, res) => {
+    res.sendFile(path.join(__dirname, 'about.html'));
+});
+
 app.get('/admin', authenticate, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
@@ -214,6 +229,43 @@ app.get('/product/:pid', async (req, res) => {
     } catch (err) {
         console.error('Product error:', err);
         res.status(500).send('Internal Server Error');
+    }
+});
+
+app.get('/orders-data', authenticate, async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+    try {
+        const [orders] = await db.query('SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC', [req.user.email]);
+        res.json(orders.map(order => ({
+            order_id: order.orderID,
+            email: order.user_email,
+            total_amount: order.total_price,
+            items: order.items,
+            status: order.status,
+            created_at: order.created_at
+        })));
+    } catch (err) {
+        console.error('Error fetching orders:', err);
+        res.status(500).json({ error: 'Error fetching orders' });
+    }
+});
+
+app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
+    try {
+        const [orders] = await db.query('SELECT * FROM orders ORDER BY created_at DESC');
+        res.json(orders.map(order => ({
+            order_id: order.orderID,
+            email: order.user_email,
+            total_amount: order.total_price,
+            items: order.items,
+            status: order.status,
+            created_at: order.created_at
+        })));
+    } catch (err) {
+        console.error('Error fetching admin orders:', err);
+        res.status(500).json({ error: 'Error fetching orders' });
     }
 });
 
