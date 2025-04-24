@@ -334,8 +334,8 @@ header nav ul li a:hover {
   position: fixed;
   top: 70px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.2); /* Increased opacity for less transparency */
-  backdrop-filter: blur(5px); /* Reduced blur for better readability */
+  background: rgba(30, 30, 50, 0.9); /* Darker, more opaque background for contrast */
+  backdrop-filter: blur(5px);
   border: 1px solid var(--card-border);
   padding: 20px;
   box-shadow: var(--shadow);
@@ -376,7 +376,7 @@ header nav ul li a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.15); /* Slightly more opaque background for list items */
+  background: rgba(50, 50, 80, 0.5); /* Darker background for list items */
   padding: 10px;
   border-radius: 10px;
 }
@@ -395,7 +395,7 @@ header nav ul li a:hover {
   border-radius: 4px;
   text-align: center;
   font-size: 0.9em;
-  background: rgba(255, 255, 255, 0.1); /* Slightly less transparent input background */
+  background: rgba(20, 20, 40, 0.8); /* Darker input background */
   color: var(--text-color);
   transition: var(--transition);
 }
@@ -404,6 +404,43 @@ header nav ul li a:hover {
   border-color: var(--accent-color);
   box-shadow: 0 0 5px var(--glow-color);
   outline: none;
+}
+
+/* Scrollbar Styling */
+.shopping-cart::-webkit-scrollbar {
+  width: 8px;
+}
+
+.shopping-cart::-webkit-scrollbar-track {
+  background: var(--card-bg);
+  border-radius: 4px;
+}
+
+.shopping-cart::-webkit-scrollbar-thumb {
+  background: var(--accent-color);
+  border-radius: 4px;
+}
+
+.shopping-cart::-webkit-scrollbar-thumb:hover {
+  background: var(--highlight-color);
+}
+
+/* Close Button */
+.close-cart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.close-cart:hover {
+  color: var(--accent-color);
+  text-shadow: 0 0 5px var(--glow-color);
 }
 
 /* Notification */
