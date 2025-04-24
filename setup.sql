@@ -64,18 +64,18 @@ INSERT INTO categories (name) VALUES
 
 -- Insert initial products
 INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
-(1, 'Moisturizing Hand Cream', 10.99, 'A rich, non-greasy hand cream for soft hands.', '/images/product1.jpg', '/images/product1.jpg'),
-(1, 'Aloe Vera Hand Cream', 12.99, 'Hydrates and soothes dry skin.', '/images/product2.jpg', '/images/product2.jpg'),
-(1, 'Shea Butter Hand Cream', 11.99, 'Nourishes and protects hands.', '/images/product3.jpg', '/images/product3.jpg'),
-(1, 'Lavender Hand Cream', 13.99, 'Calming scent with deep hydration.', '/images/product4.jpg', '/images/product4.jpg'),
-(2, 'Herbal Shampoo', 8.99, 'Gentle cleansing for all hair types.', '/images/product5.jpg', '/images/product5.jpg'),
-(2, 'Anti-Dandruff Shampoo', 9.99, 'Fights dandruff and soothes scalp.', '/images/product6.jpg', '/images/product6.jpg'),
-(2, 'Volumizing Shampoo', 10.99, 'Adds volume and shine.', '/images/product7.jpg', '/images/product7.jpg'),
-(2, 'Color-Protect Shampoo', 11.99, 'Protects colored hair.', '/images/product8.jpg', '/images/product8.jpg'),
-(3, 'Floral Perfume', 19.99, 'A light, floral fragrance.', '/images/product9.jpg', '/images/product9.jpg'),
-(3, 'Citrus Perfume', 21.99, 'Fresh and zesty scent.', '/images/product10.jpg', '/images/product10.jpg'),
-(3, 'Woody Perfume', 23.99, 'Warm and earthy notes.', '/images/product11.jpg', '/images/product11.jpg'),
-(3, 'Ocean Breeze Perfume', 20.99, 'Cool and refreshing fragrance.', '/images/product12.jpg', '/images/product12.jpg');
+(1, 'Moisturizing Hand Cream', 19.99, 'Daily Cream 100mL', '/images/product1.jpg', '/images/product1.jpg'),
+(2, 'Aloe Vera Hand Cream', 29.99, 'Borcelle 50mL', '/images/product2.jpg', '/images/product2.jpg'),
+(3, 'Shea Butter Hand Cream', 39.99, 'Special Sale Parfume, Up to 25% off', '/images/product3.jpg', '/images/product3.jpg'),
+(3, 'Lavender Hand Cream', 49.99, 'Special Sale Perfume', '/images/product4.jpg', '/images/product4.jpg'),
+(2, 'Herbal Shampoo', 59.99, 'Studio Shodwe Haircare, Refreshing Scalp Shampoo, Anti-Dandruff, 250mL / 8.4 fl oz', '/images/product5.jpg', '/images/product5.jpg'),
+(2, 'Anti-Dandruff Shampoo', 69.99, 'Arowwai Industries, Volume Boost Shampoo, For fine and limp hair, 250mL / 8.4 fl oz', '/images/product6.jpg', '/images/product6.jpg'),
+(3, 'Volumizing Shampoo', 79.99, 'Luxury Perfume', '/images/product7.jpg', '/images/product7.jpg'),
+(3, 'Color-Protect Shampoo', 89.99, 'Special Offer Perfume, Up to 25% off', '/images/product8.jpg', '/images/product8.jpg'),
+(3, 'Floral Perfume', 99.99, 'Perfect Perfume', '/images/product9.jpg', '/images/product9.jpg'),
+(3, 'Citrus Perfume', 109.99, 'Liceria & Co., New Perfume, Fresh Blossoms of the Spring', '/images/product10.jpg', '/images/product10.jpg'),
+(3, 'Woody Perfume', 119.99, 'Gold Perfume Luxury Collection, Fragrant and Fresh, Borcelle, 150mL', '/images/product11.jpg', '/images/product11.jpg'),
+(3, 'Ocean Breeze Perfume', 129.99, 'Eau De Parfume, Black Sakura, Unveil your signature scent with timeless elegance in every drop', '/images/product12.jpg', '/images/product12.jpg');
 
 -- Insert initial users (passwords hashed with bcrypt)
 INSERT INTO users (email, password, is_admin) VALUES
