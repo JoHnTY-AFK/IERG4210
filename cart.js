@@ -156,11 +156,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const cartButton = document.getElementById('cart-button');
 const shoppingCart = document.getElementById('shopping-cart');
+let hideTimeout;
 
-cartButton.addEventListener('mouseenter', () => shoppingCart.classList.add('visible'));
-cartButton.addEventListener('mouseleave', () => shoppingCart.classList.remove('visible'));
-shoppingCart.addEventListener('mouseenter', () => shoppingCart.classList.add('visible'));
-shoppingCart.addEventListener('mouseleave', () => shoppingCart.classList.remove('visible'));
-document.querySelector('.close-cart').addEventListener('click', () => shoppingCart.classList.remove('visible'));
+// Show cart on mouseenter
+cartButton.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimeout); // Cancel any pending hide action
+    shoppingCart.classList.add('visible');
+});
+
+shoppingCart.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimeout); // Cancel any pending hide action
+    shoppingCart.classList.add('visible');
+});
+
+// Hide cart after a delay on mouseleave
+cartButton.addEventListener('mouseleave', () => {
+    hideTimeout = setTimeout(() => {
+        shoppingCart.classList.remove('visible');
+    }, 300); // 300ms delay
+});
+
+shoppingCart.addEventListener('mouseleave', () => {
+    hideTimeout = setTimeout(() => {
+        shoppingCart.classList.remove('visible');
+    }, 300); // 300ms delay
+});
+
+// Close cart immediately when clicking the close button
+document.querySelector('.close-cart').addEventListener('click', () => {
+    clearTimeout(hideTimeout); // Cancel any pending hide action
+    shoppingCart.classList.remove('visible');
+});
 
 updateCartUI();
