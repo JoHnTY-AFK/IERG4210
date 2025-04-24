@@ -23,6 +23,11 @@ document.addEventListener('click', (event) => {
     }
 });
 
+// Function to sanitize PayPal form fields
+function sanitizePayPalField(value) {
+    return value.replace(/[^a-zA-Z0-9\s\-,.]/g, '');
+}
+
 function updateCartUI() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     const cartItems = document.querySelector('.cart-items');
@@ -55,8 +60,9 @@ function updateCartUI() {
         cartItem.innerHTML = DOMPurify.sanitize(`
             ${item.name} - <input type="number" value="${item.quantity}" min="0" data-pid="${item.pid}"> x $${item.price}
         `);
+        const sanitizedName = sanitizePayPalField(item.name);
         form.innerHTML += `
-            <input type="hidden" name="item_name_${itemIndex}" value="${item.name}">
+            <input type="hidden" name="item_name_${itemIndex}" value="${sanitizedName}">
             <input type="hidden" name="item_number_${itemIndex}" value="${item.pid}">
             <input type="hidden" name="amount_${itemIndex}" value="${item.price}">
             <input type="hidden" name="quantity_${itemIndex}" value="${item.quantity}">
@@ -136,7 +142,9 @@ document.addEventListener('click', (event) => {
                 localStorage.removeItem('cart');
                 updateCartUI();
 
-                document.getElementById('paypal-form').submit();
+                const form = document.getElementById('paypal-form');
+                console.log('PayPal form data:', new FormData(form)); // Log form data before submission
+                form.submit();
             })
             .catch(err => {
                 console.error('Checkout error:', err);
