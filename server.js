@@ -126,21 +126,6 @@ app.get('/product', (req, res) => {
     res.sendFile(path.join(__dirname, 'product.html'));
 });
 
-app.get('/orders', authenticate, (req, res) => {
-    if (!req.user) {
-        return res.redirect('/login');
-    }
-    res.sendFile(path.join(__dirname, 'orders.html'));
-});
-
-app.get('/categories', (req, res) => {
-    res.sendFile(path.join(__dirname, 'categories.html'));
-});
-
-app.get('/about', (req, res) => {
-    res.sendFile(path.join(__dirname, 'about.html'));
-});
-
 app.get('/admin', authenticate, isAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
@@ -230,6 +215,13 @@ app.get('/product/:pid', async (req, res) => {
         console.error('Product error:', err);
         res.status(500).send('Internal Server Error');
     }
+});
+
+app.get('/orders', authenticate, (req, res) => {
+    if (!req.user) {
+        return res.redirect('/login');
+    }
+    res.sendFile(path.join(__dirname, 'orders.html'));
 });
 
 app.get('/orders-data', authenticate, async (req, res) => {
