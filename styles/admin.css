@@ -59,11 +59,16 @@ form label {
 
 form input[type="text"],
 form input[type="number"],
+form input[type="password"],
 form textarea,
 form select {
-  width: 100%; /* Full-width inputs for better usability */
+  width: calc(100% - 40px); /* Adjusted width with padding to prevent touching edges */
+  max-width: 500px; /* Max width to keep inputs centered */
   padding: 12px;
   margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block; /* Ensure centering works */
   border: 2px solid #00ffcc; /* Neon cyan border */
   border-radius: 8px;
   font-size: 1em;
@@ -74,6 +79,7 @@ form select {
 
 form input[type="text"]:focus,
 form input[type="number"]:focus,
+form input[type="password"]:focus,
 form textarea:focus,
 form select:focus {
   border-color: #ff00ff; /* Neon magenta on focus */
@@ -92,6 +98,11 @@ form input[type="file"] {
   color: #e0e0e0;
   border: 2px solid #00ffcc;
   border-radius: 8px;
+  width: calc(100% - 40px); /* Match other inputs */
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
 }
 
 /* Error Message Styles */
@@ -100,6 +111,7 @@ form input[type="file"] {
   font-size: 0.95em;
   margin-bottom: 20px;
   text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+  text-align: center; /* Center error messages */
 }
 
 /* Button Styles */
@@ -132,6 +144,25 @@ ul button {
 ul button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(255, 77, 77, 0.7);
+}
+
+/* View Button Styles */
+ul a {
+  display: inline-block;
+  padding: 8px 15px;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #1a1a2e; /* Dark text for contrast */
+  background: linear-gradient(45deg, #00ffcc, #007bff); /* Cyan to blue gradient */
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+ul a:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0, 123, 255, 0.7);
 }
 
 /* List Styles */
@@ -274,9 +305,16 @@ li:hover {
 
   form input[type="text"],
   form input[type="number"],
+  form input[type="password"],
   form textarea,
   form select {
-    width: 100%;
+    width: calc(100% - 20px); /* Slightly smaller padding for smaller screens */
+    max-width: none; /* Remove max-width on smaller screens */
+  }
+
+  form input[type="file"] {
+    width: calc(100% - 20px);
+    max-width: none;
   }
 
   button {
