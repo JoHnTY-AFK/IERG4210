@@ -17,7 +17,7 @@ dotenv.config();
 const fs = require('fs');
 
 const app = express();
-const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
+const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
 
 const db = mysql.createPool({
     host: process.env.DB_HOST || 'ierg4210.mysql.database.azure.com',
@@ -229,7 +229,10 @@ app.get('/orders-data', authenticate, async (req, res) => {
         return res.status(401).json({ error: 'Not authenticated' });
     }
     try {
-        const [orders] = await db.query('SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC', [req.user.email]);
+        const [orders] = await db.query(
+            'SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC LIMIT 5',
+            [req.user.email]
+        );
         res.json(orders.map(order => ({
             order_id: order.orderID,
             email: order.user_email,
@@ -417,8 +420,8 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
             // Insert order
             const userEmail = req.user ? req.user.email : null;
             const [result] = await connection.query(
-                'INSERT INTO orders (user_email, items, total_price, digest, status) VALUES (?, ?, ?, ?, ?)',
-                [userEmail, JSON.stringify(orderItems), totalPrice, digest, 'pending']
+                'INSERT INTO orders (user_email, items, total_price, digest, salt, status) VALUES (?, ?, ?, ?, ?, ?)',
+                [userEmail, JSON.stringify(orderItems), totalPrice, digest, salt, 'pending']
             );
 
             connection.release();
@@ -475,7 +478,7 @@ app.post('/paypal-webhook', async (req, res) => {
         // Regenerate digest
         const currency = 'USD';
         const merchantEmail = 'testing6070@example.com';
-        const salt = order.digest.slice(0, 32); // Assuming first 32 chars are salt (simplified)
+        const salt = order.salt;
         const dataToHash = [
             currency,
             merchantEmail,
@@ -489,9 +492,9 @@ app.post('/paypal-webhook', async (req, res) => {
             return res.status(400).send('Digest validation failed');
         }
 
-        // Save transaction
+        // Save transaction with product list
         await db.query(
-            'INSERT INTO transactions (orderID, paypal_txn_id, payment_status, payment_amount, currency_code, payer_email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO transactions (orderID, paypal_txn_id, payment_status, payment_amount, currency_code, payer_email, created_at, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 orderID,
                 paypalTxnId,
@@ -499,7 +502,8 @@ app.post('/paypal-webhook', async (req, res) => {
                 parseFloat(req.body.mc_gross),
                 req.body.mc_currency,
                 req.body.payer_email,
-                new Date()
+                new Date(),
+                JSON.stringify(orderItems)
             ]
         );
 

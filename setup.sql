@@ -36,6 +36,7 @@ CREATE TABLE orders (
     items JSON NOT NULL,
     total_price DECIMAL(10,2) NOT NULL,
     digest VARCHAR(255) NOT NULL,
+    salt VARCHAR(32) NOT NULL,
     status ENUM('pending', 'completed', 'failed') NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE SET NULL
@@ -50,6 +51,7 @@ CREATE TABLE transactions (
     payment_amount DECIMAL(10,2) NOT NULL,
     currency_code VARCHAR(10) NOT NULL,
     payer_email VARCHAR(255),
+    items JSON NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (orderID) REFERENCES orders(orderID)
 );

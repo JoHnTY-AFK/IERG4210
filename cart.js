@@ -33,7 +33,7 @@ function updateCartUI() {
     const form = document.createElement('form');
     form.id = 'paypal-form';
     form.method = 'POST';
-    form.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr'; // Sandbox URL
+    form.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
 
     // PayPal required hidden fields
     form.innerHTML = `
@@ -44,13 +44,13 @@ function updateCartUI() {
         <input type="hidden" name="currency_code" value="USD">
         <input type="hidden" name="invoice" id="invoice">
         <input type="hidden" name="custom" id="custom">
-        <input type="hidden" name="return" value="https://ierg4210.koreacentral.cloudapp.azure.com/">
+        <input type="hidden" name="return" value="https://ierg4210.koreacentral.cloudapp.azure.com/?payment=success">
         <input type="hidden" name="notify_url" value="https://ierg4210.koreacentral.cloudapp.azure.com/paypal-webhook">
     `;
 
     cart.forEach((item, index) => {
         totalAmount += item.price * item.quantity;
-        const itemIndex = index + 1; // PayPal indices start at 1
+        const itemIndex = index + 1;
         const cartItem = document.createElement('li');
         cartItem.innerHTML = DOMPurify.sanitize(`
             ${item.name} - <input type="number" value="${item.quantity}" min="0" data-pid="${item.pid}"> x $${item.price}
@@ -106,7 +106,19 @@ document.addEventListener('click', (event) => {
             return;
         }
 
-        const items = cart.map(item => ({ pid: item.pid, quantity: item.quantity }));
+        // Validate quantities
+        const items = cart.map(item => ({
+            pid: item.pid,
+            quantity: item.quantity
+        }));
+
+        for (const item of items) {
+            if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+                alert('Invalid quantity for product ID ' + item.pid);
+                return;
+            }
+        }
+
         fetch('https://ierg4210.koreacentral.cloudapp.azure.com/validate-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -118,21 +130,27 @@ document.addEventListener('click', (event) => {
                 return response.json();
             })
             .then(data => {
-                // Set PayPal form fields
                 document.getElementById('invoice').value = data.orderID;
                 document.getElementById('custom').value = data.digest;
 
-                // Clear cart
                 localStorage.removeItem('cart');
                 updateCartUI();
 
-                // Programmatically submit the form to PayPal
                 document.getElementById('paypal-form').submit();
             })
             .catch(err => {
                 console.error('Checkout error:', err);
                 alert('Checkout failed: ' + err.message);
             });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Check for payment success query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+        alert('Payment successful! Thank you for your purchase.');
+        history.replaceState({}, '', '/'); // Clear query parameter
     }
 });
 

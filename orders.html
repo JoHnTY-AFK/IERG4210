@@ -25,7 +25,7 @@
     </header>
 
     <section class="orders">
-        <h2>My Orders</h2>
+        <h2>My Recent Orders (Last 5)</h2>
         <ul id="order-list"></ul>
     </section>
 
@@ -133,13 +133,14 @@
                         return;
                     }
                     orders.forEach(order => {
-                        const items = JSON.parse(order.items);
-                        const itemList = items.map(item => `${item.quantity}x Product ID ${item.pid}`).join(', ');
+                        const items = JSON.parse(order.items).map(item => 
+                            `Product #${item.pid}: ${item.quantity} x $${item.price.toFixed(2)}`
+                        ).join(', ');
                         const li = document.createElement('li');
                         li.innerHTML = DOMPurify.sanitize(`
                             <p><strong>Order ID:</strong> ${order.order_id}</p>
                             <p><strong>Total Amount:</strong> $${order.total_amount.toFixed(2)}</p>
-                            <p><strong>Items:</strong> ${itemList}</p>
+                            <p><strong>Items:</strong> ${items}</p>
                             <p><strong>Status:</strong> <span class="status-${order.status}">${order.status}</span></p>
                             <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
                         `);
@@ -152,5 +153,5 @@
                 });
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355c62f9f95b074',t:'MTc0NTQ5OTUyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
