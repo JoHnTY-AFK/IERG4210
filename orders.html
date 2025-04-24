@@ -139,9 +139,11 @@
                             `Product #${item.pid}: ${item.quantity} x $${parseFloat(item.price).toFixed(2)}`
                         ).join(', ');
                         const li = document.createElement('li');
+                        // Convert total_amount to a number before calling toFixed
+                        const totalAmount = parseFloat(order.total_amount);
                         li.innerHTML = DOMPurify.sanitize(`
                             <p><strong>Order ID:</strong> ${order.order_id}</p>
-                            <p><strong>Total Amount:</strong> $${order.total_amount.toFixed(2)}</p>
+                            <p><strong>Total Amount:</strong> $${isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}</p>
                             <p><strong>Items:</strong> ${items}</p>
                             <p><strong>Status:</strong> <span class="status-${order.status}">${order.status}</span></p>
                             <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
