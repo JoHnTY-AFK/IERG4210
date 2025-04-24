@@ -7,7 +7,7 @@
   --secondary-bg: #16213E;
   --accent-color: #00D4FF;
   --highlight-color: #6E44FF;
-  --text-color: #E6E6FA;
+  --text-color: #F5F5F5; /* Changed for better visibility in dark mode */
   --card-bg: rgba(255, 255, 255, 0.1);
   --card-border: rgba(255, 255, 255, 0.2);
   --glow-color: rgba(0, 212, 255, 0.5);
