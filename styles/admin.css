@@ -141,15 +141,22 @@ li {
 }
 
 .admin-back-link a {
-  color: #007bff;
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
   text-decoration: none;
+  border-radius: 5px;
   font-size: 0.9em;
-  transition: color 0.3s ease;
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .admin-back-link a:hover {
-  color: #0056b3;
-  text-decoration: underline;
+  background-color: #0056b3;
+  transform: translateY(-2px);
+  text-decoration: none;
 }
 
 /* Responsive Design */
