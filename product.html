@@ -8,9 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 </head>
 <body>
-    <button class="theme-toggle" onclick="toggleTheme()">
-        <img src="https://img.icons8.com/ios-filled/24/sun.png" alt="Toggle Theme" id="theme-icon">
-    </button>
     <header>
         <h1>Dummy Shopping Website</h1>
         <nav>
@@ -26,8 +23,9 @@
         <button id="user-status" class="user-status">Guest</button>
         <button id="cart-button" class="cart-button">Cart (0)</button>
     </header>
+
     <section class="product-details">
-        <p class="back-link"><a href="/">← Back to Home</a></p>
+        <p class="back-link"><a href="/index.html">← Back to Home</a></p>
         <div class="product-image-container">
             <img id="product-image" src="" alt="Product Image" class="product-image">
         </div>
@@ -38,29 +36,21 @@
             <button class="add-to-cart" id="add-to-cart">Add to Cart</button>
         </div>
     </section>
+
     <div id="shopping-cart" class="shopping-cart">
         <button class="close-cart">×</button>
         <h3>Shopping Cart</h3>
         <ul class="cart-items"></ul>
     </div>
+
     <footer>
         <p>© 2025 Dummy Shopping Website</p>
     </footer>
+
     <script src="/cart.js"></script>
     <script>
-        function toggleTheme() {
-            const body = document.body;
-            const themeIcon = document.getElementById('theme-icon');
-            if (body.classList.contains('light-mode')) {
-                body.classList.remove('light-mode');
-                themeIcon.src = 'https://img.icons8.com/ios-filled/24/sun.png';
-            } else {
-                body.classList.add('light-mode');
-                themeIcon.src = 'https://img.icons8.com/ios-filled/24/moon-symbol.png';
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
+            // Handle CSRF token for logout
             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -104,6 +94,7 @@
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
+            // Handle user status
             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/user', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -136,6 +127,7 @@
                 })
                 .catch(err => console.error('User fetch error:', err));
 
+            // Load product details
             const urlParams = new URLSearchParams(window.location.search);
             const pid = urlParams.get('pid');
             if (pid) {
@@ -150,8 +142,6 @@
                         document.getElementById('product-description').textContent = product.description;
                         document.getElementById('product-image').src = product.image || `/images/product${pid}.jpg`;
                         document.getElementById('add-to-cart').setAttribute('data-pid', pid);
-                        document.getElementById('add-to-cart').setAttribute('data-name', product.name);
-                        document.getElementById('add-to-cart').setAttribute('data-price', product.price);
                     })
                     .catch(err => {
                         console.error('Product fetch error:', err);
@@ -164,5 +154,5 @@
     </script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355e89a4c536743',t:'MTc0NTUwMDkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93574a0aedd9b0c4',t:'MTc0NTUxNTQxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355e89a4c536743',t:'MTc0NTUwMDkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
