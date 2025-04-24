@@ -24,19 +24,21 @@
         <button id="cart-button" class="cart-button">Cart (0)</button>
     </header>
 
-    <section class="login-form">
-        <h2>Login</h2>
-        <form id="login-form" method="POST">
-            <input type="hidden" name="csrfToken" id="csrfToken">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required><br>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required><br>
-            <div id="form-error" class="error"></div>
-            <button type="submit">Login</button>
-        </form>
-        <p class="back-link"><a href="/">Back to Home</a></p>
-    </section>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <h1>Login to Your Account</h1>
+            <form id="login-form">
+                <input type="hidden" name="csrfToken" id="csrfToken">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+                <div id="form-error" class="error"></div>
+                <button type="submit">Login</button>
+            </form>
+            <p class="back-link"><a href="/">Back to Home</a></p>
+        </div>
+    </div>
 
     <div id="shopping-cart" class="shopping-cart">
         <button class="close-cart">×</button>
@@ -131,11 +133,12 @@
             // Handle login form submission
             document.getElementById('login-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value.trim();
                 const errorDiv = document.getElementById('form-error');
 
-                if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailRegex.test(email)) {
                     errorDiv.textContent = 'Invalid email format';
                     return;
                 }
@@ -149,15 +152,15 @@
                     const csrfData = await csrfResponse.json();
                     document.getElementById('csrfToken').value = csrfData.csrfToken;
 
-                    const response = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/login', {
+                    const loginResponse = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email, password, csrfToken: csrfData.csrfToken }),
                         credentials: 'include'
                     });
 
-                    const data = await response.json();
-                    if (!response.ok) {
+                    const data = await loginResponse.json();
+                    if (!loginResponse.ok) {
                         errorDiv.textContent = data.error || 'Login failed';
                         fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                             .then(res => res.json())
