@@ -1,0 +1,20 @@
+project-folder/
+│
+├── images/
+│   └── product1.jpg
+│   └── product2.jpg
+│   └── ... (up to product12.jpg)
+├── public/
+│   └── admin.html
+├── styles/
+│   └── admin.css
+│   └── main.css
+├── uploads/
+├── .env
+├── cart.js
+├── hashPassword.js
+├── index.html
+├── login.html
+├── product.html
+├── server.js
+└── setup.sql

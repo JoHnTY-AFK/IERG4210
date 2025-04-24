@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Login - Dummy Shopping Website</title>
+      <link rel="stylesheet" href="/styles/main.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+   </head>
+   <body>
+      <div class="login-wrapper">
+         <div class="login-container">
+            <h1>Login to Your Account</h1>
+            <form id="login-form">
+               <input type="hidden" name="csrfToken" id="csrfToken">
+               <label for="email">Email</label>
+               <input type="email" id="email" name="email" required placeholder="Enter your email">
+               <label for="password">Password</label>
+               <input type="password" id="password" name="password" required placeholder="Enter your password">
+               <div id="form-error" class="error"></div>
+               <button type="submit">Login</button>
+            </form>
+            <p class="back-link"><a href="/">Back to Home</a></p>
+         </div>
+      </div>
+      <script>
+         // Note: Nonce is injected by server
+         document.getElementById('login-form').addEventListener('submit', async (e) => {
+             e.preventDefault();
+         
+             const email = document.getElementById('email').value.trim();
+             const password = document.getElementById('password').value.trim();
+             const errorDiv = document.getElementById('form-error');
+         
+             // Client-side validation
+             const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+             if (!emailRegex.test(email)) {
+                 errorDiv.textContent = 'Invalid email format';
+                 return;
+             }
+             if (password.length < 8 || password.length > 50) {
+                 errorDiv.textContent = 'Password must be 8-50 characters';
+                 return;
+             }
+         
+             // Always get a fresh CSRF token before login attempt
+             try {
+                 const csrfResponse = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { 
+                     credentials: 'include' 
+                 });
+                 const csrfData = await csrfResponse.json();
+                 document.getElementById('csrfToken').value = csrfData.csrfToken;
+                 
+                 const loginResponse = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/login', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                     },
+                     credentials: 'include',
+                     body: JSON.stringify({
+                         email,
+                         password,
+                         csrfToken: csrfData.csrfToken
+                     })
+                 });
+         
+                 if (!loginResponse.ok) {
+                     const error = await loginResponse.json();
+                     throw new Error(error.error || 'Login failed');
+                 }
+         
+                 const data = await loginResponse.json();
+                 window.location.href = data.redirect || '/';
+                 
+             } catch (error) {
+                 console.error('Login error:', error);
+                 errorDiv.textContent = error.message;
+                 // Force CSRF token refresh on error
+                 fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
+                     .then(res => res.json())
+                     .then(data => document.getElementById('csrfToken').value = data.csrfToken);
+             }
+         });
+      </script>
+      <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+   </body>
+</html>
