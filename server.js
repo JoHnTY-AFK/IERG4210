@@ -481,7 +481,8 @@ app.post('/paypal-webhook', async (req, res) => {
         }
 
         const order = orders[0];
-        const orderItems = JSON.parse(order.items);
+        // Check if order.items is already an object; if not, parse it
+        const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
 
         // Regenerate digest
         const currency = 'USD';
