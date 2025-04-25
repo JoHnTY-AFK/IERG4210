@@ -107,7 +107,10 @@
                          categorySelect.appendChild(option);
                      });
                  })
-                 .catch(err => console.error('Categories error:', err));
+                 .catch(err => {
+                     console.error('Categories error:', err);
+                     document.getElementById('product-form-error').textContent = 'Failed to load categories';
+                 });
          }
          
          function loadProducts() {
@@ -125,12 +128,15 @@
                              ${product.name} - $${product.price}
                              <a href="/product?pid=${product.pid}" target="_blank">View</a>
                              <button onclick="deleteProduct(${product.pid})">Delete</button>
-                             <button onclick="editProduct(${product.pid}, '${product.name}', ${product.price}, '${product.description}', ${product.catid})">Edit</button>
+                             <button onclick="editProduct(${product.pid}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${product.description.replace(/'/g, "\\'")}', ${product.catid})">Edit</button>
                          `);
                          productList.appendChild(li);
                      });
                  })
-                 .catch(err => console.error('Products error:', err));
+                 .catch(err => {
+                     console.error('Products error:', err);
+                     document.getElementById('product-form-error').textContent = 'Failed to load products';
+                 });
          }
          
          function loadCategoryList() {
@@ -147,12 +153,15 @@
                          li.innerHTML = DOMPurify.sanitize(`
                              ${category.name}
                              <button onclick="deleteCategory(${category.catid})">Delete</button>
-                             <button onclick="editCategory(${category.catid}, '${category.name}')">Edit</button>
+                             <button onclick="editCategory(${category.catid}, '${category.name.replace(/'/g, "\\'")}')">Edit</button>
                          `);
                          categoryList.appendChild(li);
                      });
                  })
-                 .catch(err => console.error('Category list error:', err));
+                 .catch(err => {
+                     console.error('Category list error:', err);
+                     document.getElementById('category-form-error').textContent = 'Failed to load categories';
+                 });
          }
          
          function loadOrders() {
@@ -235,7 +244,7 @@
                  })
                  .catch(err => {
                      console.error('Product form error:', err);
-                     errorDiv.textContent = err.message;
+                     errorDiv.textContent = 'Error: ' + err.message;
                  });
          });
          
@@ -276,7 +285,7 @@
                  })
                  .catch(err => {
                      console.error('Category form error:', err);
-                     errorDiv.textContent = err.message;
+                     errorDiv.textContent = 'Error: ' + err.message;
                  });
          });
          
@@ -311,33 +320,46 @@
          });
          
          function deleteProduct(pid) {
-             if (confirm('Are you sure?')) {
+             if (confirm('Are you sure you want to delete this product?')) {
                  fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/delete-product/${pid}`, {
                      method: 'DELETE',
-                     headers: { 'X-CSRF-Token': csrfToken },
+                     headers: { 
+                         'Content-Type': 'application/json',
+                         'X-CSRF-Token': csrfToken 
+                     },
                      credentials: 'include'
                  })
                      .then(response => {
-                         if (!response.ok) throw new Error('Delete product failed');
+                         if (!response.ok) {
+                             return response.text().then(text => { throw new Error(text); });
+                         }
                          return response.text();
                      })
                      .then(message => {
                          alert(message);
                          loadProducts();
                      })
-                     .catch(err => console.error('Delete product error:', err));
+                     .catch(err => {
+                         console.error('Delete product error:', err);
+                         document.getElementById('product-form-error').textContent = 'Error deleting product: ' + err.message;
+                     });
              }
          }
          
          function deleteCategory(catid) {
-             if (confirm('Are you sure?')) {
+             if (confirm('Are you sure you want to delete this category?')) {
                  fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/delete-category/${catid}`, {
                      method: 'DELETE',
-                     headers: { 'X-CSRF-Token': csrfToken },
+                     headers: { 
+                         'Content-Type': 'application/json',
+                         'X-CSRF-Token': csrfToken 
+                     },
                      credentials: 'include'
                  })
                      .then(response => {
-                         if (!response.ok) throw new Error('Delete category failed');
+                         if (!response.ok) {
+                             return response.text().then(text => { throw new Error(text); });
+                         }
                          return response.text();
                      })
                      .then(message => {
@@ -345,7 +367,10 @@
                          loadCategories();
                          loadCategoryList();
                      })
-                     .catch(err => console.error('Delete category error:', err));
+                     .catch(err => {
+                         console.error('Delete category error:', err);
+                         document.getElementById('category-form-error').textContent = 'Error deleting category: ' + err.message;
+                     });
              }
          }
          
@@ -357,11 +382,11 @@
                  <label for="category">Category:</label>
                  <select id="category" name="catid" required></select><br>
                  <label for="name">Product Name:</label>
-                 <input type="text" id="name" name="name" value="${name}" required><br>
+                 <input type="text" id="name" name="name" value="${DOMPurify.sanitize(name)}" required><br>
                  <label for="price">Price:</label>
                  <input type="number" id="price" name="price" step="0.01" min="0" value="${price}" required><br>
                  <label for="description">Description:</label>
-                 <textarea id="description" name="description" required>${description}</textarea><br>
+                 <textarea id="description" name="description" required>${DOMPurify.sanitize(description)}</textarea><br>
                  <label for="image">Product Image:</label>
                  <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif"><br>
                  <div id="image-error" class="error"></div>
@@ -371,7 +396,12 @@
              form.dataset.pid = pid;
              form.dataset.original = document.getElementById('product-form').dataset.original || form.innerHTML;
              loadCategories();
-             setTimeout(() => document.getElementById('category').value = catid, 100);
+             setTimeout(() => {
+                 const categorySelect = document.getElementById('category');
+                 if (categorySelect) {
+                     categorySelect.value = catid;
+                 }
+             }, 100);
          }
          
          function editCategory(catid, name) {
@@ -380,7 +410,7 @@
                  <h2>Edit Category</h2>
                  <input type="hidden" name="csrfToken" id="csrfTokenCat" value="${csrfToken}">
                  <label for="category-name">Category Name:</label>
-                 <input type="text" id="category-name" name="name" value="${name}" required><br>
+                 <input type="text" id="category-name" name="name" value="${DOMPurify.sanitize(name)}" required><br>
                  <div id="category-form-error" class="error"></div>
                  <button type="submit">Update Category</button>
              `);
@@ -398,5 +428,5 @@
          });
       </script>
       <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353a7e07dc3b0b7',t:'MTc0NTQ3NzMxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d62e31bd28',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355c62f98f253e5',t:'MTc0NTQ5OTUyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d62e31bd28',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading' !== document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355c62f98f253e5',t:'MTc0NTQ5OTUyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935cc1d27dc853f0',t:'MTc0NTU3Mjc0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

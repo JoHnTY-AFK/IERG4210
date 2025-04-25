@@ -229,18 +229,33 @@ app.get('/orders-data', authenticate, async (req, res) => {
         return res.status(401).json({ error: 'Not authenticated' });
     }
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const offset = (page - 1) * limit;
+
         const [orders] = await db.query(
-            'SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC LIMIT 5',
+            'SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            [req.user.email, limit, offset]
+        );
+        const [countResult] = await db.query(
+            'SELECT COUNT(*) as total FROM orders WHERE user_email = ?',
             [req.user.email]
         );
-        res.json(orders.map(order => ({
-            order_id: order.orderID,
-            email: order.user_email,
-            total_amount: order.total_price,
-            items: order.items,
-            status: order.status,
-            created_at: order.created_at
-        })));
+        const totalOrders = countResult[0].total;
+        const totalPages = Math.ceil(totalOrders / limit);
+
+        res.json({
+            orders: orders.map(order => ({
+                order_id: order.orderID,
+                email: order.user_email,
+                total_amount: order.total_price,
+                items: order.items,
+                status: order.status,
+                created_at: order.created_at
+            })),
+            totalPages,
+            currentPage: page
+        });
     } catch (err) {
         console.error('Error fetching orders:', err);
         res.status(500).json({ error: 'Error fetching orders' });
