@@ -130,7 +130,27 @@
             // Load product details
             const urlParams = new URLSearchParams(window.location.search);
             const pid = urlParams.get('pid');
-            if (pid) {
+            const pathMatch = window.location.pathname.match(/\/(\d+)-([^\/]+)\/(\d+)-([^\/]+)/);
+            if (pathMatch) {
+                const [, catid, catname, pidFromUrl, pname] = pathMatch;
+                fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${pidFromUrl}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Product fetch failed');
+                        return response.json();
+                    })
+                    .then(product => {
+                        document.getElementById('product-name').textContent = product.name;
+                        document.getElementById('product-price').textContent = `$${product.price}`;
+                        document.getElementById('product-description').textContent = product.description;
+                        document.getElementById('product-image').src = product.image || `/images/product${pidFromUrl}.jpg`;
+                        document.getElementById('add-to-cart').setAttribute('data-pid', pidFromUrl);
+                        document.querySelector('.back-link a').href = `/${catid}-${product.category_slug}/`;
+                    })
+                    .catch(err => {
+                        console.error('Product fetch error:', err);
+                        document.querySelector('.product-details').innerHTML = '<p>Error loading product</p>';
+                    });
+            } else if (pid) {
                 fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${pid}`)
                     .then(response => {
                         if (!response.ok) throw new Error('Product fetch failed');
@@ -142,6 +162,7 @@
                         document.getElementById('product-description').textContent = product.description;
                         document.getElementById('product-image').src = product.image || `/images/product${pid}.jpg`;
                         document.getElementById('add-to-cart').setAttribute('data-pid', pid);
+                        document.querySelector('.back-link a').href = `/${product.catid}-${product.category_slug}/`;
                     })
                     .catch(err => {
                         console.error('Product fetch error:', err);
@@ -154,5 +175,5 @@
     </script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355e89a4c536743',t:'MTc0NTUwMDkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355e89a4c536743',t:'MTc0NTUwMDkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935c85985f0fbd02',t:'MTc0NTU3MDI4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

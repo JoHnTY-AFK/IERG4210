@@ -42,8 +42,19 @@
       </div>
       <footer>
          <p>© 2025 Dummy Shopping Website</p>
+         <div id="fb-root"></div>
+         <div class="fb-like" data-href="https://ierg4210.koreacentral.cloudapp.azure.com/" data-width="" data-layout="standard" data-action="like" data-size="small" data-share="true"></div>
       </footer>
       <script src="/cart.js"></script>
+      <script>
+         (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = 'https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v20.0&appId=9580308452083485';
+            fjs.parentNode.insertBefore(js, fjs);
+         }(document, 'script', 'facebook-jssdk'));
+      </script>
       <script>
          document.addEventListener('DOMContentLoaded', () => {
              fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
@@ -131,7 +142,7 @@
                          const categorySelect = document.getElementById('category-select');
                          categories.forEach(category => {
                              const option = document.createElement('option');
-                             option.value = category.catid;
+                             option.value = `${category.catid}-${category.slug}`;
                              option.textContent = category.name;
                              categorySelect.appendChild(option);
                          });
@@ -143,7 +154,15 @@
                              loadProducts(catid);
                              document.getElementById('breadcrumb-category').textContent = categorySelect.options[categorySelect.selectedIndex].text;
                          } else {
-                             loadProducts();
+                             const pathMatch = window.location.pathname.match(/\/(\d+)-([^\/]+)/);
+                             if (pathMatch) {
+                                 const catid = pathMatch[1];
+                                 categorySelect.value = categories.find(c => c.catid == catid)?.value || '';
+                                 loadProducts(catid);
+                                 document.getElementById('breadcrumb-category').textContent = categories.find(c => c.catid == catid)?.name || 'All Categories';
+                             } else {
+                                 loadProducts();
+                             }
                          }
                      })
                      .catch(err => console.error('Categories error:', err));
@@ -163,7 +182,7 @@
                              const productDiv = document.createElement('div');
                              productDiv.className = 'product';
                              productDiv.innerHTML = DOMPurify.sanitize(`
-                                 <a href="/product?pid=${product.pid}">
+                                 <a href="/${product.catid}-${product.category_slug}/${product.pid}-${product.product_slug}">
                                      <img src="${product.thumbnail || '/images/product' + product.pid + '.jpg'}" alt="${product.name}" class="thumbnail">
                                      <h3>${product.name}</h3>
                                  </a>
@@ -177,9 +196,10 @@
              }
          
              document.getElementById('category-select').addEventListener('change', (e) => {
-                 const catid = e.target.value;
-                 if (catid) {
-                     history.pushState({}, '', `?catid=${catid}`);
+                 const value = e.target.value;
+                 if (value) {
+                     const [catid, slug] = value.split('-');
+                     history.pushState({}, '', `/${catid}-${slug}/`);
                      loadProducts(catid);
                      document.getElementById('breadcrumb-category').textContent = e.target.options[e.target.selectedIndex].text;
                  } else {
@@ -191,5 +211,5 @@
          });
       </script>
       <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935c8598cc6a7bc3',t:'MTc0NTU3MDI4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

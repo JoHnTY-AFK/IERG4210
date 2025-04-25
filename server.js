@@ -113,6 +113,16 @@ const validatePrice = (price) => {
 // Escape HTML function
 const escapeHtml = (text) => sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} });
 
+// Slugify function for SEO-friendly URLs
+const slugify = (text) => {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim();
+};
+
 // Routes for HTML pages
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -132,6 +142,38 @@ app.get('/admin', authenticate, isAdmin, (req, res) => {
 
 app.get('/public/admin.html', (req, res) => {
     res.redirect('/login');
+});
+
+// SEO-friendly category route
+app.get('/:catid-:catname/', async (req, res) => {
+    try {
+        const { catid, catname } = req.params;
+        const [categories] = await db.query('SELECT * FROM categories WHERE catid = ?', [catid]);
+        if (categories.length === 0 || slugify(categories[0].name) !== catname) {
+            return res.status(404).send('Category not found');
+        }
+        res.sendFile(path.join(__dirname, 'index.html'));
+    } catch (err) {
+        console.error('Category route error:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// SEO-friendly product route
+app.get('/:catid-:catname/:pid-:pname', async (req, res) => {
+    try {
+        const { catid, catname, pid, pname } = req.params;
+        const [categories] = await db.query('SELECT * FROM categories WHERE catid = ?', [catid]);
+        const [products] = await db.query('SELECT * FROM products WHERE pid = ? AND catid = ?', [pid, catid]);
+        if (categories.length === 0 || slugify(categories[0].name) !== catname || 
+            products.length === 0 || slugify(products[0].name) !== pname) {
+            return res.status(404).send('Product or category not found');
+        }
+        res.sendFile(path.join(__dirname, 'product.html'));
+    } catch (err) {
+        console.error('Product route error:', err);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 // API Routes
@@ -157,7 +199,7 @@ app.get('/user', async (req, res) => {
 app.get('/categories', async (req, res) => {
     try {
         const [results] = await db.query('SELECT * FROM categories');
-        res.json(results.map(row => ({ catid: row.catid, name: escapeHtml(row.name) })));
+        res.json(results.map(row => ({ catid: row.catid, name: escapeHtml(row.name), slug: slugify(row.name) })));
     } catch (err) {
         console.error('Categories error:', err);
         res.status(500).send('Internal Server Error');
@@ -166,7 +208,7 @@ app.get('/categories', async (req, res) => {
 
 app.get('/products', async (req, res) => {
     try {
-        const [results] = await db.query('SELECT * FROM products');
+        const [results] = await db.query('SELECT p.*, c.name as category_name FROM products p JOIN categories c ON p.catid = c.catid');
         res.json(results.map(row => ({
             pid: row.pid,
             catid: row.catid,
@@ -174,7 +216,10 @@ app.get('/products', async (req, res) => {
             price: row.price,
             description: escapeHtml(row.description),
             image: row.image,
-            thumbnail: row.thumbnail
+            thumbnail: row.thumbnail,
+            category_name: escapeHtml(row.category_name),
+            category_slug: slugify(row.category_name),
+            product_slug: slugify(row.name)
         })));
     } catch (err) {
         console.error('Products error:', err);
@@ -184,7 +229,7 @@ app.get('/products', async (req, res) => {
 
 app.get('/products/:catid', async (req, res) => {
     try {
-        const [results] = await db.query('SELECT * FROM products WHERE catid = ?', [req.params.catid]);
+        const [results] = await db.query('SELECT p.*, c.name as category_name FROM products p JOIN categories c ON p.catid = c.catid WHERE p.catid = ?', [req.params.catid]);
         res.json(results.map(row => ({
             pid: row.pid,
             catid: row.catid,
@@ -192,7 +237,10 @@ app.get('/products/:catid', async (req, res) => {
             price: row.price,
             description: escapeHtml(row.description),
             image: row.image,
-            thumbnail: row.thumbnail
+            thumbnail: row.thumbnail,
+            category_name: escapeHtml(row.category_name),
+            category_slug: slugify(row.category_name),
+            product_slug: slugify(row.name)
         })));
     } catch (err) {
         console.error('Products by catid error:', err);
@@ -202,14 +250,18 @@ app.get('/products/:catid', async (req, res) => {
 
 app.get('/product/:pid', async (req, res) => {
     try {
-        const [results] = await db.query('SELECT * FROM products WHERE pid = ?', [req.params.pid]);
+        const [results] = await db.query('SELECT p.*, c.name as category_name FROM products p JOIN categories c ON p.catid = c.catid WHERE p.pid = ?', [req.params.pid]);
         const product = results[0] || {};
         res.json({
             pid: product.pid,
             name: escapeHtml(product.name || ''),
             price: product.price || 0,
             description: escapeHtml(product.description || ''),
-            image: product.image || ''
+            image: product.image || '',
+            catid: product.catid,
+            category_name: escapeHtml(product.category_name || ''),
+            category_slug: slugify(product.category_name || ''),
+            product_slug: slugify(product.name || '')
         });
     } catch (err) {
         console.error('Product error:', err);
