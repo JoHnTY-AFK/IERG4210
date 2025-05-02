@@ -50,7 +50,7 @@ initializeDb().catch(err => console.error('Database initialization error:', err)
 
 // Middleware
 app.use(cors({
-    origin: ['https://ierg4210.koreacentral.cloudapp.azure.com', 'https://20.249.188.8'],
+    origin: ['https://s32.ierg4210.ie.cuhk.edu.hk', 'https://20.249.188.8'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
