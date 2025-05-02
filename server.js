@@ -19,7 +19,8 @@ const fs = require('fs');
 const app = express();
 const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
 
-const db = mysql.createPool({
+// Database configuration
+const dbConfig = {
     host: process.env.DB_HOST || 'ierg4210.mysql.database.azure.com',
     user: process.env.DB_USER || 'admin1',
     password: process.env.DB_PASSWORD || 'Fd&5cb4VZ',
@@ -29,22 +30,27 @@ const db = mysql.createPool({
     queueLimit: 0,
     ssl: {
         rejectUnauthorized: true,
-        ca: fs.readFileSync("./DigiCertGlobalRootCA.crt.pem", "utf8"),
+        ca: fs.readFileSync(path.join(__dirname, 'DigiCertGlobalRootCA.crt.pem'), 'utf8'),
     }
-});
+};
 
-db.getConnection((err, connection) => {
-    if (err) {
+let db;
+async function initializeDb() {
+    try {
+        db = await mysql.createPool(dbConfig);
+        console.log('Database connected successfully');
+        const connection = await db.getConnection();
+        connection.release();
+    } catch (err) {
         console.error('Database connection failed:', err);
         process.exit(1);
     }
-    console.log('Database connected successfully');
-    connection.release();
-});
+}
+initializeDb().catch(err => console.error('Database initialization error:', err));
 
 // Middleware
 app.use(cors({
-    origin: 'https://ierg4210.koreacentral.cloudapp.azure.com',
+    origin: ['https://ierg4210.koreacentral.cloudapp.azure.com', 'https://20.249.188.8'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
@@ -60,14 +66,14 @@ const generateCsrfToken = () => crypto.randomBytes(16).toString('hex');
 app.use((req, res, next) => {
     if (!req.cookies.csrfToken) {
         const token = generateCsrfToken();
-        res.cookie('csrfToken', token, { httpOnly: true, secure: true, sameSite: 'strict' });
+        res.cookie('csrfToken', token, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 3600000 });
     }
     next();
 });
 
 const validateCsrfToken = (req, res, next) => {
     const csrfToken = req.cookies.csrfToken;
-    const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.cookies.csrfToken;
+    const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.query.csrfToken;
     if (!csrfToken || !bodyToken || csrfToken !== bodyToken) {
         return res.status(403).send('CSRF token validation failed');
     }
@@ -80,7 +86,7 @@ const authenticate = async (req, res, next) => {
         const authToken = req.cookies.authToken;
         if (!authToken) return next();
         
-        const [results] = await db.query('SELECT * FROM users WHERE auth_token = ?', [authToken]);
+        const [results] = await db.query('SELECT userid, email, password, is_admin FROM users WHERE auth_token = ?', [authToken]);
         if (!results.length) return next();
         
         req.user = results[0];
@@ -553,8 +559,8 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
         return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
     }
 
-    const sanitizedName = sanitizeHtml(name);
-    const sanitizedDesc = sanitizeHtml(description);
+    const sanitizedName = escapeHtml(name);
+    const sanitizedDesc = escapeHtml(description);
 
     if (imagePath) {
         if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
@@ -602,8 +608,8 @@ app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload
         return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
     }
 
-    const sanitizedName = sanitizeHtml(name);
-    const sanitizedDesc = sanitizeHtml(description);
+    const sanitizedName = escapeHtml(name);
+    const sanitizedDesc = escapeHtml(description);
 
     if (imagePath) {
         if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
@@ -644,7 +650,7 @@ app.post('/add-category', validateCsrfToken, authenticate, isAdmin, async (req, 
     const nameError = validateTextInput(name, 255, 'Category name');
     if (nameError) return res.status(400).send(nameError);
 
-    const sanitizedName = sanitizeHtml(name);
+    const sanitizedName = escapeHtml(name);
     db.query('INSERT INTO categories (name) VALUES (?)', [sanitizedName], (err) => {
         if (err) {
             console.error('Add category error:', err);
@@ -660,7 +666,7 @@ app.put('/update-category/:catid', validateCsrfToken, authenticate, isAdmin, asy
     const nameError = validateTextInput(name, 255, 'Category name');
     if (nameError) return res.status(400).send(nameError);
 
-    const sanitizedName = sanitizeHtml(name);
+    const sanitizedName = escapeHtml(name);
     db.query('UPDATE categories SET name=? WHERE catid=?', [sanitizedName, catid], (err) => {
         if (err) {
             console.error('Update category error:', err);
