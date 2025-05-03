@@ -1,7 +1,7 @@
 document.addEventListener('click', (event) => {
     if (event.target.classList.contains('add-to-cart')) {
         const productId = parseInt(event.target.getAttribute('data-pid'));
-        fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${productId}`)
+        fetch(`/product/${productId}`)
             .then(response => {
                 if (!response.ok) throw new Error('Product fetch failed');
                 return response.json();
@@ -49,8 +49,8 @@ function updateCartUI() {
         <input type="hidden" name="currency_code" value="USD">
         <input type="hidden" name="invoice" id="invoice">
         <input type="hidden" name="custom" id="custom">
-        <input type="hidden" name="return" value="https://ierg4210.koreacentral.cloudapp.azure.com/?payment=success">
-        <input type="hidden" name="notify_url" value="https://ierg4210.koreacentral.cloudapp.azure.com/paypal-webhook">
+        <input type="hidden" name="return" value="/?payment=success">
+        <input type="hidden" name="notify_url" value="/paypal-webhook">
     `;
 
     cart.forEach((item, index) => {
@@ -126,7 +126,7 @@ document.addEventListener('click', (event) => {
             }
         }
 
-        fetch('https://ierg4210.koreacentral.cloudapp.azure.com/validate-order', {
+        fetch('/validate-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ items }),
