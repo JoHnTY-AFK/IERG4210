@@ -56,7 +56,9 @@ app.use(cors({
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Serve static files
+app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use(express.static(__dirname, { index: false }));
 
 // CSRF Protection
