@@ -64,7 +64,7 @@ app.use('/images', express.static(path.join(__dirname, 'images'), {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
     setHeaders: (res) => {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
@@ -76,7 +76,12 @@ const generateCsrfToken = () => crypto.randomBytes(16).toString('hex');
 app.use((req, res, next) => {
     if (!req.cookies.csrfToken) {
         const token = generateCsrfToken();
-        res.cookie('csrfToken', token, { httpOnly: true, secure: true, sameSite: 'strict' });
+        console.log('Setting csrfToken cookie for:', req.hostname);
+        res.cookie('csrfToken', token, { 
+            httpOnly: true, 
+            secure: true, 
+            sameSite: 'strict'
+        });
     }
     next();
 });
@@ -85,6 +90,7 @@ const validateCsrfToken = (req, res, next) => {
     const csrfToken = req.cookies.csrfToken;
     const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.cookies.csrfToken;
     if (!csrfToken || !bodyToken || csrfToken !== bodyToken) {
+        console.error('CSRF token validation failed:', { csrfToken, bodyToken });
         return res.status(403).send('CSRF token validation failed');
     }
     next();
@@ -269,7 +275,11 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
         const [orders] = await db.query('SELECT * FROM orders ORDER BY created_at DESC');
         res.json(orders.map(order => ({
             order_id: order.orderID,
-            email: order.user_email,
+            email:
+
+
+
+            order.user_email,
             total_amount: order.total_price,
             items: order.items,
             status: order.status,
@@ -284,6 +294,7 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
 app.post('/login', validateCsrfToken, async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log('Login attempt:', { email, domain: req.hostname });
         
         const connection = await db.getConnection();
         
@@ -315,6 +326,7 @@ app.post('/login', validateCsrfToken, async (req, res) => {
 
             connection.release();
 
+            console.log('Setting authToken cookie for:', req.hostname);
             res.cookie('authToken', authToken, {
                 httpOnly: true,
                 secure: true,
@@ -349,13 +361,15 @@ app.post('/login', validateCsrfToken, async (req, res) => {
 app.post('/logout', validateCsrfToken, authenticate, async (req, res) => {
     try {
         await db.query('UPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
+        console.log('Clearing authToken cookie for:', req.hostname);
         res.clearCookie('authToken');
         
         const newCsrfToken = generateCsrfToken();
+        console.log('Setting new csrfToken cookie for:', req.hostname);
         res.cookie('csrfToken', newCsrfToken, { 
             httpOnly: true, 
             secure: true, 
-            sameSite: 'strict' 
+            sameSite: 'strict'
         });
         
         res.json({ 
@@ -373,21 +387,22 @@ app.post('/change-password', validateCsrfToken, authenticate, async (req, res) =
     try {
         const { currentPassword, newPassword } = req.body;
         if (!currentPassword || !newPassword || newPassword.length < 8) {
-            return res.status(400).send('Invalid input: New password must be at least 8 characters');
+            return res.status(400).json({ error: 'Invalid input: New password must be at least 8 characters' });
         }
 
         const match = await bcrypt.compare(currentPassword, req.user.password);
-        if (!match) return res.status(401).send('Current password incorrect');
+        if (!match) return res.status(401).json({ error: 'Current password incorrect' });
         
         const hash = await bcrypt.hash(newPassword, 10);
         await db.query('UPDATE users SET password = ?, auth_token = NULL WHERE userid = ?', [hash, req.user.userid]);
         
+        console.log('Clearing authToken and csrfToken cookies for:', req.hostname);
         res.clearCookie('authToken');
         res.clearCookie('csrfToken');
-        res.redirect('/login');
+        res.json({ success: true, redirect: '/login' });
     } catch (err) {
         console.error('Password change error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 

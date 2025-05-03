@@ -79,6 +79,10 @@
                  if (data.email === 'Guest') {
                      window.location.href = '/login';
                  }
+             })
+             .catch(err => {
+                 console.error('User fetch error:', err);
+                 window.location.href = '/login';
              });
          
          fetch('/csrf-token', { credentials: 'include' })
@@ -270,7 +274,7 @@
                      } else {
                          e.target.reset();
                      }
-                     document.getElementById('crsfTokenCat').value = csrfToken;
+                     document.getElementById('csrfTokenCat').value = csrfToken;
                      loadCategories();
                      loadCategoryList();
                  })
@@ -303,6 +307,8 @@
                      if (!response.ok) {
                          return response.text().then(text => { throw new Error(text); });
                      }
+                     alert('Password changed successfully. Please log in again.');
+                     window.location.href = '/login';
                  })
                  .catch(err => {
                      console.error('Password change error:', err);
@@ -351,41 +357,25 @@
          
          function editProduct(pid, name, price, description, catid) {
              const form = document.getElementById('product-form');
-             form.innerHTML = DOMPurify.sanitize(`
-                 <h2>Edit Product</h2>
-                 <input type="hidden" name="csrfToken" id="csrfToken" value="${csrfToken}">
-                 <label for="category">Category:</label>
-                 <select id="category" name="catid" required></select><br>
-                 <label for="name">Product Name:</label>
-                 <input type="text" id="name" name="name" value="${name}" required><br>
-                 <label for="price">Price:</label>
-                 <input type="number" id="price" name="price" step="0.01" min="0" value="${price}" required><br>
-                 <label for="description">Description:</label>
-                 <textarea id="description" name="description" required>${description}</textarea><br>
-                 <label for="image">Product Image:</label>
-                 <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif"><br>
-                 <div id="image-error" class="error"></div>
-                 <div id="product-form-error" class="error"></div>
-                 <button type="submit">Update Product</button>
-             `);
+             document.getElementById('name').value = name;
+             document.getElementById('price').value = price;
+             document.getElementById('description').value = description;
+             document.getElementById('category').value = catid;
+             form.querySelector('button').textContent = 'Update Product';
+             if (!form.dataset.original) {
+                 form.dataset.original = form.innerHTML;
+             }
              form.dataset.pid = pid;
-             form.dataset.original = document.getElementById('product-form').dataset.original || form.innerHTML;
-             loadCategories();
-             setTimeout(() => document.getElementById('category').value = catid, 100);
          }
          
          function editCategory(catid, name) {
              const form = document.getElementById('category-form');
-             form.innerHTML = DOMPurify.sanitize(`
-                 <h2>Edit Category</h2>
-                 <input type="hidden" name="csrfToken" id="csrfTokenCat" value="${csrfToken}">
-                 <label for="category-name">Category Name:</label>
-                 <input type="text" id="category-name" name="name" value="${name}" required><br>
-                 <div id="category-form-error" class="error"></div>
-                 <button type="submit">Update Category</button>
-             `);
+             document.getElementById('category-name').value = name;
+             form.querySelector('button').textContent = 'Update Category';
+             if (!form.dataset.original) {
+                 form.dataset.original = form.innerHTML;
+             }
              form.dataset.catid = catid;
-             form.dataset.original = document.getElementById('category-form').dataset.original || form.innerHTML;
          }
          
          window.addEventListener('load', () => {
@@ -397,6 +387,5 @@
              loadOrders();
          });
       </script>
-      <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353a7e07dc3b0b7',t:'MTc0NTQ3NzMxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d62e31bd28',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355c62f98f253e5',t:'MTc0NTQ5OTUyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+   </body>
 </html>

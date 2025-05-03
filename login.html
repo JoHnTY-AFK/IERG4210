@@ -26,7 +26,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Handle CSRF token
+            // Fetch CSRF token
             fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -39,14 +39,15 @@
                 e.preventDefault();
                 const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value.trim();
+                const errorDiv = document.getElementById('form-error');
 
                 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                 if (!emailRegex.test(email)) {
-                    alert('Please enter a valid email address.');
+                    errorDiv.textContent = 'Please enter a valid email address.';
                     return;
                 }
                 if (password.length < 8 || password.length > 50) {
-                    alert('Password must be between 8 and 50 characters long.');
+                    errorDiv.textContent = 'Password must be between 8 and 50 characters long.';
                     return;
                 }
 
@@ -64,25 +65,54 @@
 
                     const data = await loginResponse.json();
                     if (!loginResponse.ok) {
-                        alert(data.error || 'Invalid email or password. Please try again.');
-                        fetch('/csrf-token', { credentials: 'include' })
+                        errorDiv.textContent = data.error || 'Invalid email or password. Please try again.';
+                        console.error('Login failed:', data.error);
+                        await fetch('/csrf-token', { credentials: 'include' })
                             .then(res => res.json())
                             .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                         return;
                     }
 
+                    // Update UI to reflect logged-in state
+                    await updateUserStatus();
                     window.location.href = data.redirect || '/';
                 } catch (err) {
                     console.error('Login error:', err);
-                    alert('An error occurred during login. Please try again later.');
-                    fetch('/csrf-token', { credentials: 'include' })
+                    errorDiv.textContent = 'An error occurred during login. Please try again later.';
+                    await fetch('/csrf-token', { credentials: 'include' })
                         .then(res => res.json())
                         .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                 }
             });
+
+            // Function to update user status after login
+            async function updateUserStatus() {
+                try {
+                    const response = await fetch('/user', { credentials: 'include' });
+                    const data = await response.json();
+                    if (data.email !== 'Guest') {
+                        // Update navigation if present (optional, as login.html doesn't have nav)
+                        const userStatus = document.getElementById('user-status');
+                        const logoutLink = document.getElementById('logout-link');
+                        const adminLink = document.getElementById('admin-link');
+                        const ordersLink = document.getElementById('orders-link');
+
+                        if (userStatus) userStatus.textContent = 'Logout';
+                        if (logoutLink) logoutLink.style.display = 'inline';
+                        if (userStatus) userStatus.style.display = 'none';
+                        if (ordersLink) ordersLink.style.display = 'inline';
+
+                        if (data.isAdmin && adminLink) {
+                            adminLink.style.display = 'inline';
+                        } else if (adminLink) {
+                            adminLink.style.display = 'none';
+                        }
+                    }
+                } catch (err) {
+                    console.error('User status update error:', err);
+                }
+            }
         });
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355dd1cdb6bbfd6',t:'MTc0NTUwMDQ2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading' !==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a193d8e91e450f',t:'MTc0NjI5NDM4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

@@ -1,7 +1,7 @@
 document.addEventListener('click', (event) => {
     if (event.target.classList.contains('add-to-cart')) {
         const productId = parseInt(event.target.getAttribute('data-pid'));
-        fetch(`/product/${productId}`)
+        fetch(`/product/${productId}`, { credentials: 'include' })
             .then(response => {
                 if (!response.ok) throw new Error('Product fetch failed');
                 return response.json();
@@ -128,12 +128,21 @@ document.addEventListener('click', (event) => {
             }
         }
 
-        fetch('/validate-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items }),
-            credentials: 'include'
-        })
+        // Fetch CSRF token
+        fetch('/csrf-token', { credentials: 'include' })
+            .then(response => {
+                if (!response.ok) throw new Error('CSRF token fetch failed');
+                return response.json();
+            })
+            .then(data => {
+                const csrfToken = data.csrfToken;
+                return fetch('/validate-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, csrfToken }),
+                    credentials: 'include'
+                });
+            })
             .then(response => {
                 if (!response.ok) throw new Error('Order validation failed');
                 return response.json();
