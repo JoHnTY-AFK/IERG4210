@@ -73,7 +73,7 @@
              return null;
          }
          
-         fetch('/user', { credentials: 'include' })
+         fetch('https://ierg4210.koreacentral.cloudapp.azure.com/user', { credentials: 'include' })
              .then(res => res.json())
              .then(data => {
                  if (data.email === 'Guest') {
@@ -81,7 +81,7 @@
                  }
              });
          
-         fetch('/csrf-token', { credentials: 'include' })
+         fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
              .then(res => res.json())
              .then(data => {
                  csrfToken = data.csrfToken;
@@ -92,7 +92,7 @@
              .catch(err => console.error('CSRF fetch error:', err));
          
          function loadCategories() {
-             fetch('/categories')
+             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/categories')
                  .then(response => {
                      if (!response.ok) throw new Error('Categories fetch failed');
                      return response.json();
@@ -111,7 +111,7 @@
          }
          
          function loadProducts() {
-             fetch('/products')
+             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/products')
                  .then(response => {
                      if (!response.ok) throw new Error('Products fetch failed');
                      return response.json();
@@ -134,7 +134,7 @@
          }
          
          function loadCategoryList() {
-             fetch('/categories')
+             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/categories')
                  .then(response => {
                      if (!response.ok) throw new Error('Categories fetch failed');
                      return response.json();
@@ -156,7 +156,7 @@
          }
          
          function loadOrders() {
-             fetch('/admin-orders', { credentials: 'include' })
+             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/admin-orders', { credentials: 'include' })
                  .then(response => {
                      if (!response.ok) throw new Error('Orders fetch failed');
                      return response.json();
@@ -212,7 +212,7 @@
              }
          
              const formData = new FormData(e.target);
-             const url = isUpdate ? `/update-product/${isUpdate}` : '/add-product';
+             const url = isUpdate ? `https://ierg4210.koreacentral.cloudapp.azure.com/update-product/${isUpdate}` : 'https://ierg4210.koreacentral.cloudapp.azure.com/add-product';
              fetch(url, {
                  method: isUpdate ? 'PUT' : 'POST',
                  body: formData,
@@ -251,7 +251,7 @@
                  return;
              }
          
-             const url = isUpdate ? `/update-category/${isUpdate}` : '/add-category';
+             const url = isUpdate ? `https://ierg4210.koreacentral.cloudapp.azure.com/update-category/${isUpdate}` : 'https://ierg4210.koreacentral.cloudapp.azure.com/add-category';
              fetch(url, {
                  method: isUpdate ? 'PUT' : 'POST',
                  headers: { 'Content-Type': 'application/json' },
@@ -270,7 +270,7 @@
                      } else {
                          e.target.reset();
                      }
-                     document.getElementById('crsfTokenCat').value = csrfToken;
+                     document.getElementById('csrfTokenCat').value = csrfToken;
                      loadCategories();
                      loadCategoryList();
                  })
@@ -294,7 +294,7 @@
              }
          
              const formData = new FormData(e.target);
-             fetch('/change-password', {
+             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/change-password', {
                  method: 'POST',
                  body: formData,
                  credentials: 'include'
@@ -312,7 +312,7 @@
          
          function deleteProduct(pid) {
              if (confirm('Are you sure?')) {
-                 fetch(`/delete-product/${pid}`, {
+                 fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/delete-product/${pid}`, {
                      method: 'DELETE',
                      headers: { 'X-CSRF-Token': csrfToken },
                      credentials: 'include'
@@ -331,7 +331,7 @@
          
          function deleteCategory(catid) {
              if (confirm('Are you sure?')) {
-                 fetch(`/delete-category/${catid}`, {
+                 fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/delete-category/${catid}`, {
                      method: 'DELETE',
                      headers: { 'X-CSRF-Token': csrfToken },
                      credentials: 'include'

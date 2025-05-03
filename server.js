@@ -44,11 +44,7 @@ db.getConnection((err, connection) => {
 
 // Middleware
 app.use(cors({
-    origin: [
-        'https://ierg4210.koreacentral.cloudapp.azure.com',
-        'https://20.249.188.8',
-        'https://s32.ierg4210.ie.cuhk.edu.hk'
-    ],
+    origin: 'https://ierg4210.koreacentral.cloudapp.azure.com',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
@@ -56,11 +52,7 @@ app.use(cors({
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-
-// Serve static files (Nginx should handle /images/ and /uploads/ for optimal performance)
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(__dirname, { index: false }));
 
 // CSRF Protection
