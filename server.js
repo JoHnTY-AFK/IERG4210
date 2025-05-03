@@ -59,8 +59,16 @@ app.use(cookieParser());
 
 // Serve static files (Nginx should handle /images/ and /uploads/ for optimal performance)
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/images', express.static(path.join(__dirname, 'images'), {
+    setHeaders: (res) => {
+        res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
+    }
+}));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res) => {
+        res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
+    }
+}));
 app.use(express.static(__dirname, { index: false }));
 
 // CSRF Protection
@@ -217,7 +225,8 @@ app.get('/product/:pid', async (req, res) => {
             name: escapeHtml(product.name || ''),
             price: product.price || 0,
             description: escapeHtml(product.description || ''),
-            image: product.image || ''
+            image: product.image || '',
+            thumbnail: product.thumbnail || ''
         });
     } catch (err) {
         console.error('Product error:', err);
@@ -556,6 +565,7 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
 
         sharp(req.file.path)
             .resize(200, 200)
+            .jpeg({ quality: 80 })
             .toFile(`uploads/thumbnail-${req.file.filename}`, (err) => {
                 if (err) {
                     console.error('Image resize error:', err);
@@ -605,6 +615,7 @@ app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload
 
         sharp(req.file.path)
             .resize(200, 200)
+            .jpeg({ quality: 80 })
             .toFile(`uploads/thumbnail-${req.file.filename}`, (err) => {
                 if (err) {
                     console.error('Image resize error:', err);
