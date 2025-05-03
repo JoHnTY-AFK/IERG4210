@@ -1,7 +1,7 @@
 document.addEventListener('click', (event) => {
     if (event.target.classList.contains('add-to-cart')) {
         const productId = parseInt(event.target.getAttribute('data-pid'));
-        fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${productId}`)
+        fetch(`/product/${productId}`)
             .then(response => {
                 if (!response.ok) throw new Error('Product fetch failed');
                 return response.json();
@@ -41,6 +41,8 @@ function updateCartUI() {
     form.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
 
     // PayPal required hidden fields
+    const returnUrl = `${window.location.origin}/?payment=success`;
+    const notifyUrl = `${window.location.origin}/paypal-webhook`;
     form.innerHTML = `
         <input type="hidden" name="cmd" value="_cart">
         <input type="hidden" name="upload" value="1">
@@ -49,8 +51,8 @@ function updateCartUI() {
         <input type="hidden" name="currency_code" value="USD">
         <input type="hidden" name="invoice" id="invoice">
         <input type="hidden" name="custom" id="custom">
-        <input type="hidden" name="return" value="https://ierg4210.koreacentral.cloudapp.azure.com/?payment=success">
-        <input type="hidden" name="notify_url" value="https://ierg4210.koreacentral.cloudapp.azure.com/paypal-webhook">
+        <input type="hidden" name="return" value="${returnUrl}">
+        <input type="hidden" name="notify_url" value="${notifyUrl}">
     `;
 
     cart.forEach((item, index) => {
@@ -126,7 +128,7 @@ document.addEventListener('click', (event) => {
             }
         }
 
-        fetch('https://ierg4210.koreacentral.cloudapp.azure.com/validate-order', {
+        fetch('/validate-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ items }),
@@ -175,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('payment') === 'success') {
         alert('Payment successful! Thank you for your purchase.');
-        history.replaceState({}, '', '/'); // Clear query parameter
+        history.replaceState({}, '', '/');
     }
 });
 
@@ -185,12 +187,12 @@ let hideTimeout;
 
 // Show cart on mouseenter
 cartButton.addEventListener('mouseenter', () => {
-    clearTimeout(hideTimeout); // Cancel any pending hide action
+    clearTimeout(hideTimeout);
     shoppingCart.classList.add('visible');
 });
 
 shoppingCart.addEventListener('mouseenter', () => {
-    clearTimeout(hideTimeout); // Cancel any pending hide action
+    clearTimeout(hideTimeout);
     shoppingCart.classList.add('visible');
 });
 
@@ -198,18 +200,18 @@ shoppingCart.addEventListener('mouseenter', () => {
 cartButton.addEventListener('mouseleave', () => {
     hideTimeout = setTimeout(() => {
         shoppingCart.classList.remove('visible');
-    }, 300); // 300ms delay
+    }, 300);
 });
 
 shoppingCart.addEventListener('mouseleave', () => {
     hideTimeout = setTimeout(() => {
         shoppingCart.classList.remove('visible');
-    }, 300); // 300ms delay
+    }, 300);
 });
 
 // Close cart immediately when clicking the close button
 document.querySelector('.close-cart').addEventListener('click', () => {
-    clearTimeout(hideTimeout); // Cancel any pending hide action
+    clearTimeout(hideTimeout);
     shoppingCart.classList.remove('visible');
 });
 
