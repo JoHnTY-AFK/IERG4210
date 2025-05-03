@@ -16,7 +16,6 @@
                 <li><a href="#">Categories</a></li>
                 <li><a href="#">About</a></li>
                 <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
-                <li><a href="/orders Edison: 978-0-19-502189-8, 978-0-19-502190-4
                 <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
                 <li><form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link" style="display: none;">Logout</button></form></li>
             </ul>
@@ -28,7 +27,7 @@
     <section class="product-details">
         <p class="back-link"><a href="/index.html">← Back to Home</a></p>
         <div class="product-image-container">
-            <img id="product-image" src="" alt="Product Image" class="product-image">
+            <img id="product-image" src="" alt="Product Image" class="product-image" loading="lazy">
         </div>
         <div class="product-info">
             <h2 id="product-name"></h2>
@@ -142,10 +141,10 @@
                         document.getElementById('product-price').textContent = `$${product.price}`;
                         document.getElementById('product-description').textContent = product.description;
                         const productImage = document.getElementById('product-image');
-                        productImage.src = product.image || `/images/product${pid}.jpg`;
+                        productImage.src = product.thumbnail || `/images/product${pid}.jpg`;
                         productImage.onerror = () => {
                             console.error(`Failed to load image: ${productImage.src}`);
-                            productImage.src = '/images/fallback.jpg'; // Optional: Fallback image
+                            productImage.src = '/public/images/fallback.jpg';
                         };
                         document.getElementById('add-to-cart').setAttribute('data-pid', pid);
                     })
@@ -158,5 +157,5 @@
             }
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a172fd8d95677d',t:'MTc0NjI5MzAzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

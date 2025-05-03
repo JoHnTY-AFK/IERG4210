@@ -56,7 +56,7 @@ app.use(cors({
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use(express.static(__dirname, { index: false }));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // CSRF Protection
 const generateCsrfToken = () => crypto.randomBytes(16).toString('hex');
@@ -212,7 +212,8 @@ app.get('/product/:pid', async (req, res) => {
             name: escapeHtml(product.name || ''),
             price: product.price || 0,
             description: escapeHtml(product.description || ''),
-            image: product.image || ''
+            image: product.image || '',
+            thumbnail: product.thumbnail || ''
         });
     } catch (err) {
         console.error('Product error:', err);
@@ -334,7 +335,7 @@ app.post('/login', validateCsrfToken, async (req, res) => {
 
 app.post('/logout', validateCsrfToken, authenticate, async (req, res) => {
     try {
-        await db.query('UPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
+        await db.query('ObjecUPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
         res.clearCookie('authToken');
         
         const newCsrfToken = generateCsrfToken();
