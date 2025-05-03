@@ -6,27 +6,6 @@
     <title>My Orders - Dummy Shopping Website</title>
     <link rel="stylesheet" href="/styles/main.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-    <style>
-        .pagination {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .pagination button {
-            padding: 8px 16px;
-            margin: 0 5px;
-            cursor: pointer;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .pagination button:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-        .pagination span {
-            margin: 0 10px;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -46,13 +25,8 @@
     </header>
 
     <section class="orders">
-        <h2>My Order History</h2>
+        <h2>My Recent Orders (Last 5)</h2>
         <ul id="order-list"></ul>
-        <div class="pagination">
-            <button id="prev-page" disabled>Previous</button>
-            <span id="page-info">Page 1 of 1</span>
-            <button id="next-page">Next</button>
-        </div>
     </section>
 
     <div id="shopping-cart" class="shopping-cart">
@@ -67,9 +41,6 @@
 
     <script src="/cart.js"></script>
     <script>
-        let currentPage = 1;
-        let totalPages = 1;
-
         document.addEventListener('DOMContentLoaded', () => {
             // Handle CSRF token for logout
             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
@@ -135,7 +106,6 @@
                         } else if (adminLink) {
                             adminLink.style.display = 'none';
                         }
-                        loadOrders(currentPage);
                     } else {
                         userStatus.textContent = 'Login';
                         userStatus.style.display = 'inline';
@@ -150,41 +120,26 @@
                 })
                 .catch(err => console.error('User fetch error:', err));
 
-            // Pagination controls
-            document.getElementById('prev-page').addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadOrders(currentPage);
-                }
-            });
-
-            document.getElementById('next-page').addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    loadOrders(currentPage);
-                }
-            });
-        });
-
-        function loadOrders(page) {
-            fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/orders-data?page=${page}&limit=5`, { credentials: 'include' })
+            // Fetch and display orders
+            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/orders-data', { credentials: 'include' })
                 .then(response => {
                     if (!response.ok) throw new Error('Failed to fetch orders');
                     return response.json();
                 })
-                .then(data => {
+                .then(orders => {
                     const orderList = document.getElementById('order-list');
-                    orderList.innerHTML = '';
-                    if (data.orders.length === 0) {
+                    if (orders.length === 0) {
                         orderList.innerHTML = '<p>No orders found.</p>';
                         return;
                     }
-                    data.orders.forEach(order => {
+                    orders.forEach(order => {
+                        // Check if order.items is a string; if so, parse it; otherwise, use it directly
                         const itemsArray = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
                         const items = itemsArray.map(item => 
                             `Product #${item.pid}: ${item.quantity} x $${parseFloat(item.price).toFixed(2)}`
                         ).join(', ');
                         const li = document.createElement('li');
+                        // Convert total_amount to a number before calling toFixed
                         const totalAmount = parseFloat(order.total_amount);
                         li.innerHTML = DOMPurify.sanitize(`
                             <p><strong>Order ID:</strong> ${order.order_id}</p>
@@ -195,19 +150,12 @@
                         `);
                         orderList.appendChild(li);
                     });
-
-                    // Update pagination controls
-                    currentPage = data.currentPage;
-                    totalPages = data.totalPages;
-                    document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
-                    document.getElementById('prev-page').disabled = currentPage === 1;
-                    document.getElementById('next-page').disabled = currentPage === totalPages;
                 })
                 .catch(err => {
                     console.error('Orders fetch error:', err);
                     document.getElementById('order-list').innerHTML = '<p>Error loading orders.</p>';
                 });
-        }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935cc1d28ec1b029',t:'MTc0NTU3Mjc0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

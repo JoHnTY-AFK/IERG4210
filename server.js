@@ -19,8 +19,7 @@ const fs = require('fs');
 const app = express();
 const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
 
-// Database configuration
-const dbConfig = {
+const db = mysql.createPool({
     host: process.env.DB_HOST || 'ierg4210.mysql.database.azure.com',
     user: process.env.DB_USER || 'admin1',
     password: process.env.DB_PASSWORD || 'Fd&5cb4VZ',
@@ -30,27 +29,22 @@ const dbConfig = {
     queueLimit: 0,
     ssl: {
         rejectUnauthorized: true,
-        ca: fs.readFileSync(path.join(__dirname, 'DigiCertGlobalRootCA.crt.pem'), 'utf8'),
+        ca: fs.readFileSync("./DigiCertGlobalRootCA.crt.pem", "utf8"),
     }
-};
+});
 
-let db;
-async function initializeDb() {
-    try {
-        db = await mysql.createPool(dbConfig);
-        console.log('Database connected successfully');
-        const connection = await db.getConnection();
-        connection.release();
-    } catch (err) {
+db.getConnection((err, connection) => {
+    if (err) {
         console.error('Database connection failed:', err);
         process.exit(1);
     }
-}
-initializeDb().catch(err => console.error('Database initialization error:', err));
+    console.log('Database connected successfully');
+    connection.release();
+});
 
 // Middleware
 app.use(cors({
-    origin: ['https://ierg4210.koreacentral.cloudapp.azure.com/', 'https://20.249.188.8'],
+    origin: 'https://ierg4210.koreacentral.cloudapp.azure.com',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
@@ -66,14 +60,14 @@ const generateCsrfToken = () => crypto.randomBytes(16).toString('hex');
 app.use((req, res, next) => {
     if (!req.cookies.csrfToken) {
         const token = generateCsrfToken();
-        res.cookie('csrfToken', token, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 3600000 });
+        res.cookie('csrfToken', token, { httpOnly: true, secure: true, sameSite: 'strict' });
     }
     next();
 });
 
 const validateCsrfToken = (req, res, next) => {
     const csrfToken = req.cookies.csrfToken;
-    const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.query.csrfToken;
+    const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.cookies.csrfToken;
     if (!csrfToken || !bodyToken || csrfToken !== bodyToken) {
         return res.status(403).send('CSRF token validation failed');
     }
@@ -86,7 +80,7 @@ const authenticate = async (req, res, next) => {
         const authToken = req.cookies.authToken;
         if (!authToken) return next();
         
-        const [results] = await db.query('SELECT userid, email, password, is_admin FROM users WHERE auth_token = ?', [authToken]);
+        const [results] = await db.query('SELECT * FROM users WHERE auth_token = ?', [authToken]);
         if (!results.length) return next();
         
         req.user = results[0];
@@ -235,33 +229,18 @@ app.get('/orders-data', authenticate, async (req, res) => {
         return res.status(401).json({ error: 'Not authenticated' });
     }
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 5;
-        const offset = (page - 1) * limit;
-
         const [orders] = await db.query(
-            'SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
-            [req.user.email, limit, offset]
-        );
-        const [countResult] = await db.query(
-            'SELECT COUNT(*) as total FROM orders WHERE user_email = ?',
+            'SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC LIMIT 5',
             [req.user.email]
         );
-        const totalOrders = countResult[0].total;
-        const totalPages = Math.ceil(totalOrders / limit);
-
-        res.json({
-            orders: orders.map(order => ({
-                order_id: order.orderID,
-                email: order.user_email,
-                total_amount: order.total_price,
-                items: order.items,
-                status: order.status,
-                created_at: order.created_at
-            })),
-            totalPages,
-            currentPage: page
-        });
+        res.json(orders.map(order => ({
+            order_id: order.orderID,
+            email: order.user_email,
+            total_amount: order.total_price,
+            items: order.items,
+            status: order.status,
+            created_at: order.created_at
+        })));
     } catch (err) {
         console.error('Error fetching orders:', err);
         res.status(500).json({ error: 'Error fetching orders' });
@@ -559,8 +538,8 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
         return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
     }
 
-    const sanitizedName = escapeHtml(name);
-    const sanitizedDesc = escapeHtml(description);
+    const sanitizedName = sanitizeHtml(name);
+    const sanitizedDesc = sanitizeHtml(description);
 
     if (imagePath) {
         if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
@@ -608,8 +587,8 @@ app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload
         return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
     }
 
-    const sanitizedName = escapeHtml(name);
-    const sanitizedDesc = escapeHtml(description);
+    const sanitizedName = sanitizeHtml(name);
+    const sanitizedDesc = sanitizeHtml(description);
 
     if (imagePath) {
         if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
@@ -650,7 +629,7 @@ app.post('/add-category', validateCsrfToken, authenticate, isAdmin, async (req, 
     const nameError = validateTextInput(name, 255, 'Category name');
     if (nameError) return res.status(400).send(nameError);
 
-    const sanitizedName = escapeHtml(name);
+    const sanitizedName = sanitizeHtml(name);
     db.query('INSERT INTO categories (name) VALUES (?)', [sanitizedName], (err) => {
         if (err) {
             console.error('Add category error:', err);
@@ -666,7 +645,7 @@ app.put('/update-category/:catid', validateCsrfToken, authenticate, isAdmin, asy
     const nameError = validateTextInput(name, 255, 'Category name');
     if (nameError) return res.status(400).send(nameError);
 
-    const sanitizedName = escapeHtml(name);
+    const sanitizedName = sanitizeHtml(name);
     db.query('UPDATE categories SET name=? WHERE catid=?', [sanitizedName, catid], (err) => {
         if (err) {
             console.error('Update category error:', err);
