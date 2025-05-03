@@ -1,7 +1,7 @@
 document.addEventListener('click', (event) => {
     if (event.target.classList.contains('add-to-cart')) {
         const productId = parseInt(event.target.getAttribute('data-pid'));
-        fetch(`/product/${productId}`, { credentials: 'include' })
+        fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${productId}`)
             .then(response => {
                 if (!response.ok) throw new Error('Product fetch failed');
                 return response.json();
@@ -49,8 +49,8 @@ function updateCartUI() {
         <input type="hidden" name="currency_code" value="USD">
         <input type="hidden" name="invoice" id="invoice">
         <input type="hidden" name="custom" id="custom">
-        <input type="hidden" name="return" value="${window.location.origin}/?payment=success">
-        <input type="hidden" name="notify_url" value="${window.location.origin}/paypal-webhook">
+        <input type="hidden" name="return" value="https://ierg4210.koreacentral.cloudapp.azure.com/?payment=success">
+        <input type="hidden" name="notify_url" value="https://ierg4210.koreacentral.cloudapp.azure.com/paypal-webhook">
     `;
 
     cart.forEach((item, index) => {
@@ -126,7 +126,7 @@ document.addEventListener('click', (event) => {
             }
         }
 
-        fetch('/validate-order', {
+        fetch('https://ierg4210.koreacentral.cloudapp.azure.com/validate-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ items }),
@@ -177,14 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Payment successful! Thank you for your purchase.');
         history.replaceState({}, '', '/'); // Clear query parameter
     }
-
-    // Add error handling for image loading
-    document.querySelectorAll('img').forEach(img => {
-        img.onerror = () => {
-            console.error(`Failed to load image: ${img.src}`);
-            img.src = '/images/fallback.jpg'; // Fallback image
-        };
-    });
 });
 
 const cartButton = document.getElementById('cart-button');
