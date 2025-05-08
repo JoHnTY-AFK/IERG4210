@@ -16,7 +16,9 @@
                 <li><a href="#">Categories</a></li>
                 <li><a href="#">About</a></li>
                 <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
+                <li><a href="/profile" id="profile-link" style="display: none;">Profile</a></li>
                 <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
+                <li><a href="/signup" id="signup-link" style="display: none;">Sign Up</a></li>
                 <li><form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link" style="display: none;">Logout</button></form></li>
             </ul>
         </nav>
@@ -25,9 +27,9 @@
     </header>
 
     <section class="product-details">
-        <p class="back-link"><a href="/index.html">← Back to Home</a></p>
+        <p class="back-link"><a href="/" id="back-link">← Back to Home</a></p>
         <div class="product-image-container">
-            <img id="product-image" src="" alt="Product Image" class="product-image" loading="lazy">
+            <img id="product-image" src="" alt="Product Image" class="product-image">
         </div>
         <div class="product-info">
             <h2 id="product-name"></h2>
@@ -51,7 +53,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Handle CSRF token for logout
-            fetch('/csrf-token', { credentials: 'include' })
+            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     const logoutForm = document.getElementById('logout-form');
@@ -63,7 +65,7 @@
                         button.disabled = true;
                         
                         try {
-                            const response = await fetch('/logout', {
+                            const response = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/logout', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -81,7 +83,7 @@
                             window.location.href = result.redirect || '/login';
                         } catch (err) {
                             console.error('Logout error:', err);
-                            fetch('/csrf-token', { credentials: 'include' })
+                            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                                 .then(res => res.json())
                                 .then(data => {
                                     document.querySelector('#logout-form input[name="csrfToken"]').value = data.csrfToken;
@@ -95,22 +97,27 @@
                 .catch(err => console.error('CSRF fetch error:', err));
 
             // Handle user status
-            fetch('/user', { credentials: 'include' })
+            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/user', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     const userStatus = document.getElementById('user-status');
                     const logoutLink = document.getElementById('logout-link');
                     const adminLink = document.getElementById('admin-link');
+                    const profileLink = document.getElementById('profile-link');
                     const ordersLink = document.getElementById('orders-link');
+                    const signupLink = document.getElementById('signup-link');
                     
                     if (data.email !== 'Guest') {
                         userStatus.textContent = 'Logout';
                         logoutLink.style.display = 'inline';
                         userStatus.style.display = 'none';
                         ordersLink.style.display = 'inline';
+                        profileLink.style.display = 'inline';
+                        signupLink.style.display = 'none';
                         
                         if (data.isAdmin && adminLink) {
                             adminLink.style.display = 'inline';
+                            profileLink.style.display = 'none';
                         } else if (adminLink) {
                             adminLink.style.display = 'none';
                         }
@@ -119,6 +126,8 @@
                         userStatus.style.display = 'inline';
                         logoutLink.style.display = 'none';
                         ordersLink.style.display = 'none';
+                        profileLink.style.display = 'none';
+                        signupLink.style.display = 'inline';
                         if (adminLink) {
                             adminLink.style.display = 'none';
                         }
@@ -129,9 +138,16 @@
 
             // Load product details
             const urlParams = new URLSearchParams(window.location.search);
-            const pid = urlParams.get('pid');
+            let pid = urlParams.get('pid');
+            if (!pid) {
+                // Check if URL is SEO-friendly
+                const match = window.location.pathname.match(/\/product\/(\d+)-[^/]+\/(\d+)-/);
+                if (match) {
+                    pid = match[2];
+                }
+            }
             if (pid) {
-                fetch(`/product/${pid}`)
+                fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/product/${pid}`)
                     .then(response => {
                         if (!response.ok) throw new Error('Product fetch failed');
                         return response.json();
@@ -140,12 +156,9 @@
                         document.getElementById('product-name').textContent = product.name;
                         document.getElementById('product-price').textContent = `$${product.price}`;
                         document.getElementById('product-description').textContent = product.description;
-                        document.getElementById('product-image').src = product.thumbnail || product.image || `/images/product${pid}.jpg`;
-                        document.getElementById('product-image').onerror = () => {
-                            console.error('Failed to load image:', product.thumbnail || product.image);
-                            document.getElementById('product-image').src = '/images/fallback.jpg';
-                        };
+                        document.getElementById('product-image').src = product.image || `/images/product${pid}.jpg`;
                         document.getElementById('add-to-cart').setAttribute('data-pid', pid);
+                        document.getElementById('back-link').href = `/products/${product.catid}-${product.categorySeoName}`;
                     })
                     .catch(err => {
                         console.error('Product fetch error:', err);
@@ -156,5 +169,9 @@
             }
         });
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355e89a4c536743',t:'MTc0NTUwMDkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c7bbb388edb02b',t:'MTc0NjY5NDQ3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading' !==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
