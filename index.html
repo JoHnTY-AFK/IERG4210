@@ -16,9 +16,7 @@
                <li><a href="#">Categories</a></li>
                <li><a href="#">About</a></li>
                <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
-               <li><a href="/profile" id="profile-link" style="display: none;">Profile</a></li>
                <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
-               <li><a href="/signup" id="signup-link" style="display: none;">Sign Up</a></li>
                <li>
                   <form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link" style="display: none;">Logout</button></form>
                </li>
@@ -37,7 +35,6 @@
          </select>
       </section>
       <section class="product-list" id="product-list"></section>
-      <div class="fb-like" data-href="https://ierg4210.koreacentral.cloudapp.azure.com" data-width="" data-layout="standard" data-action="like" data-size="small" data-share="true"></div>
       <div id="shopping-cart" class="shopping-cart">
          <button class="close-cart">×</button>
          <h3>Shopping Cart</h3>
@@ -46,12 +43,10 @@
       <footer>
          <p>© 2025 Dummy Shopping Website</p>
       </footer>
-      <div id="fb-root"></div>
-      <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v20.0&appId=YOUR_APP_ID"></script>
       <script src="/cart.js"></script>
       <script>
          document.addEventListener('DOMContentLoaded', () => {
-             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
+             fetch('/csrf-token', { credentials: 'include' })
                  .then(res => res.json())
                  .then(data => {
                      const logoutForm = document.getElementById('logout-form');
@@ -63,7 +58,7 @@
                          button.disabled = true;
                          
                          try {
-                             const response = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/logout', {
+                             const response = await fetch('/logout', {
                                  method: 'POST',
                                  headers: {
                                      'Content-Type': 'application/json',
@@ -81,7 +76,7 @@
                              window.location.href = result.redirect || '/login';
                          } catch (err) {
                              console.error('Logout error:', err);
-                             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
+                             fetch('/csrf-token', { credentials: 'include' })
                                  .then(res => res.json())
                                  .then(data => {
                                      document.querySelector('#logout-form input[name="csrfToken"]').value = data.csrfToken;
@@ -94,26 +89,22 @@
                  })
                  .catch(err => console.error('CSRF fetch error:', err));
          
-             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/user', { credentials: 'include' })
+             fetch('/user', { credentials: 'include' })
                  .then(res => res.json())
                  .then(data => {
                      const userStatus = document.getElementById('user-status');
                      const logoutLink = document.getElementById('logout-link');
                      const adminLink = document.getElementById('admin-link');
-                     const profileLink = document.getElementById('profile-link');
                      const ordersLink = document.getElementById('orders-link');
-                     const signupLink = document.getElementById('signup-link');
                      
                      if (data.email !== 'Guest') {
                          userStatus.textContent = 'Logout';
                          logoutLink.style.display = 'inline';
                          userStatus.style.display = 'none';
                          ordersLink.style.display = 'inline';
-                         profileLink.style.display = 'inline';
-                         signupLink.style.display = 'none';
+                         
                          if (data.isAdmin && adminLink) {
                              adminLink.style.display = 'inline';
-                             profileLink.style.display = 'none';
                          } else if (adminLink) {
                              adminLink.style.display = 'none';
                          }
@@ -122,8 +113,6 @@
                          userStatus.style.display = 'inline';
                          logoutLink.style.display = 'none';
                          ordersLink.style.display = 'none';
-                         profileLink.style.display = 'none';
-                         signupLink.style.display = 'inline';
                          if (adminLink) {
                              adminLink.style.display = 'none';
                          }
@@ -133,7 +122,7 @@
                  .catch(err => console.error('User fetch error:', err));
          
              if (document.getElementById('category-select')) {
-                 fetch('https://ierg4210.koreacentral.cloudapp.azure.com/categories')
+                 fetch('/categories')
                      .then(response => {
                          if (!response.ok) throw new Error('Categories fetch failed');
                          return response.json();
@@ -144,7 +133,6 @@
                              const option = document.createElement('option');
                              option.value = category.catid;
                              option.textContent = category.name;
-                             option.dataset.seoName = category.seoName;
                              categorySelect.appendChild(option);
                          });
          
@@ -162,7 +150,7 @@
              }
          
              function loadProducts(catid = null) {
-                 const url = catid ? `https://ierg4210.koreacentral.cloudapp.azure.com/products/${catid}` : 'https://ierg4210.koreacentral.cloudapp.azure.com/products';
+                 const url = catid ? `/products/${catid}` : '/products';
                  fetch(url)
                      .then(response => {
                          if (!response.ok) throw new Error('Products fetch failed');
@@ -174,9 +162,11 @@
                          products.forEach(product => {
                              const productDiv = document.createElement('div');
                              productDiv.className = 'product';
+                             const imageSrc = product.thumbnail || `/images/product${product.pid}.jpg`;
                              productDiv.innerHTML = DOMPurify.sanitize(`
-                                 <a href="/product/${product.catid}-${product.categorySeoName}/${product.pid}-${product.seoName}">
-                                     <img src="${product.thumbnail || '/images/product' + product.pid + '.jpg'}" alt="${product.name}" class="thumbnail">
+                                 <a href="/product?pid=${product.pid}">
+                                     <img src="${imageSrc}" alt="${product.name}" class="thumbnail" loading="lazy"
+                                          onerror="this.src='/images/fallback.jpg'; console.error('Failed to load image: ${imageSrc}');">
                                      <h3>${product.name}</h3>
                                  </a>
                                  <p>$${product.price}</p>
@@ -190,12 +180,10 @@
          
              document.getElementById('category-select').addEventListener('change', (e) => {
                  const catid = e.target.value;
-                 const selectedOption = e.target.options[e.target.selectedIndex];
-                 const seoName = selectedOption.dataset.seoName || 'category';
                  if (catid) {
-                     history.pushState({}, '', `/products/${catid}-${seoName}`);
+                     history.pushState({}, '', `?catid=${catid}`);
                      loadProducts(catid);
-                     document.getElementById('breadcrumb-category').textContent = selectedOption.text;
+                     document.getElementById('breadcrumb-category').textContent = e.target.options[e.target.selectedIndex].text;
                  } else {
                      history.pushState({}, '', '/');
                      loadProducts();
@@ -204,8 +192,5 @@
              });
          });
       </script>
-      <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading' !==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-      <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading' !==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-      <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c7bbb38c0012db',t:'MTc0NjY5NDQ3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading' !==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
    </body>
 </html>

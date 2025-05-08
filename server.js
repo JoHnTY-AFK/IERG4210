@@ -29,25 +29,26 @@ const db = mysql.createPool({
     queueLimit: 0,
     ssl: {
         rejectUnauthorized: true,
-        ca: fs.readFileSync(process.env.SSL_CA_PATH || "./DigiCertGlobalRootCA.crt.pem", "utf8"),
+        ca: fs.readFileSync("./DigiCertGlobalRootCA.crt.pem", "utf8"),
     }
 });
 
-// Test database connection
-(async () => {
-    try {
-        const connection = await db.getConnection();
-        console.log('Database connected successfully');
-        connection.release();
-    } catch (err) {
+db.getConnection((err, connection) => {
+    if (err) {
         console.error('Database connection failed:', err);
         process.exit(1);
     }
-})();
+    console.log('Database connected successfully');
+    connection.release();
+});
 
 // Middleware
 app.use(cors({
-    origin: 'https://ierg4210.koreacentral.cloudapp.azure.com',
+    origin: [
+        'https://ierg4210.koreacentral.cloudapp.azure.com',
+        'https://20.249.188.8',
+        'https://s32.ierg4210.ie.cuhk.edu.hk'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
@@ -55,7 +56,19 @@ app.use(cors({
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
+
+// Serve static files (Nginx should handle /images/ and /uploads/ for optimal performance)
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/images', express.static(path.join(__dirname, 'images'), {
+    setHeaders: (res) => {
+        res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
+    }
+}));
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
+    setHeaders: (res) => {
+        res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
+    }
+}));
 app.use(express.static(__dirname, { index: false }));
 
 // CSRF Protection
@@ -63,7 +76,12 @@ const generateCsrfToken = () => crypto.randomBytes(16).toString('hex');
 app.use((req, res, next) => {
     if (!req.cookies.csrfToken) {
         const token = generateCsrfToken();
-        res.cookie('csrfToken', token, { httpOnly: true, secure: true, sameSite: 'strict' });
+        console.log('Setting csrfToken cookie for:', req.hostname);
+        res.cookie('csrfToken', token, { 
+            httpOnly: true, 
+            secure: true, 
+            sameSite: 'strict'
+        });
     }
     next();
 });
@@ -72,7 +90,8 @@ const validateCsrfToken = (req, res, next) => {
     const csrfToken = req.cookies.csrfToken;
     const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.cookies.csrfToken;
     if (!csrfToken || !bodyToken || csrfToken !== bodyToken) {
-        return res.status(403).json({ error: 'CSRF token validation failed' });
+        console.error('CSRF token validation failed:', { csrfToken, bodyToken });
+        return res.status(403).send('CSRF token validation failed');
     }
     next();
 };
@@ -90,12 +109,12 @@ const authenticate = async (req, res, next) => {
         next();
     } catch (err) {
         console.error('Auth error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).send('Internal Server Error');
     }
 };
 
 const isAdmin = (req, res, next) => {
-    if (!req.user || !req.user.is_admin) return res.status(403).json({ error: 'Admin access required' });
+    if (!req.user || !req.user.is_admin) return res.status(403).send('Admin access required');
     next();
 };
 
@@ -113,32 +132,6 @@ const validatePrice = (price) => {
     return null;
 };
 
-const validateCategoryId = (catid) => {
-    const num = parseInt(catid, 10);
-    if (isNaN(num) || num <= 0) return 'Category ID must be a positive integer';
-    return null;
-};
-
-const validateEmail = (email) => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!email || !emailRegex.test(email)) return 'Invalid email address';
-    return null;
-};
-
-const validatePassword = (password) => {
-    if (!password || password.length < 8 || password.length > 50) return 'Password must be 8-50 characters';
-    return null;
-};
-
-// Generate SEO-friendly name
-const generateSeoName = (name) => {
-    return name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .trim()
-        .replace(/\s+/g, '-');
-};
-
 // Escape HTML function
 const escapeHtml = (text) => sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} });
 
@@ -151,15 +144,6 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-app.get('/signup', (req, res) => {
-    res.sendFile(path.join(__dirname, 'signup.html'));
-});
-
-app.get('/profile', authenticate, (req, res) => {
-    if (!req.user) return res.redirect('/login');
-    res.sendFile(path.join(__dirname, 'profile.html'));
-});
-
 app.get('/product', (req, res) => {
     res.sendFile(path.join(__dirname, 'product.html'));
 });
@@ -170,11 +154,6 @@ app.get('/admin', authenticate, isAdmin, (req, res) => {
 
 app.get('/public/admin.html', (req, res) => {
     res.redirect('/login');
-});
-
-app.get('/orders', authenticate, (req, res) => {
-    if (!req.user) return res.redirect('/login');
-    res.sendFile(path.join(__dirname, 'orders.html'));
 });
 
 // API Routes
@@ -193,23 +172,23 @@ app.get('/user', async (req, res) => {
         res.json({ email: results[0].email, isAdmin: results[0].is_admin });
     } catch (err) {
         console.error('User fetch error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).send('Internal Server Error');
     }
 });
 
 app.get('/categories', async (req, res) => {
     try {
         const [results] = await db.query('SELECT * FROM categories');
-        res.json(results.map(row => ({ catid: row.catid, name: escapeHtml(row.name), seoName: generateSeoName(row.name) })));
+        res.json(results.map(row => ({ catid: row.catid, name: escapeHtml(row.name) })));
     } catch (err) {
         console.error('Categories error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).send('Internal Server Error');
     }
 });
 
 app.get('/products', async (req, res) => {
     try {
-        const [results] = await db.query('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.catid = c.catid');
+        const [results] = await db.query('SELECT * FROM products');
         res.json(results.map(row => ({
             pid: row.pid,
             catid: row.catid,
@@ -217,23 +196,17 @@ app.get('/products', async (req, res) => {
             price: row.price,
             description: escapeHtml(row.description),
             image: row.image,
-            thumbnail: row.thumbnail,
-            categoryName: escapeHtml(row.category_name),
-            seoName: generateSeoName(row.name),
-            categorySeoName: generateSeoName(row.category_name)
+            thumbnail: row.thumbnail
         })));
     } catch (err) {
         console.error('Products error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).send('Internal Server Error');
     }
 });
 
 app.get('/products/:catid', async (req, res) => {
     try {
-        const catidError = validateCategoryId(req.params.catid);
-        if (catidError) return res.status(400).json({ error: catidError });
-
-        const [results] = await db.query('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.catid = c.catid WHERE p.catid = ?', [req.params.catid]);
+        const [results] = await db.query('SELECT * FROM products WHERE catid = ?', [req.params.catid]);
         res.json(results.map(row => ({
             pid: row.pid,
             catid: row.catid,
@@ -241,108 +214,37 @@ app.get('/products/:catid', async (req, res) => {
             price: row.price,
             description: escapeHtml(row.description),
             image: row.image,
-            thumbnail: row.thumbnail,
-            categoryName: escapeHtml(row.category_name),
-            seoName: generateSeoName(row.name),
-            categorySeoName: generateSeoName(row.category_name)
+            thumbnail: row.thumbnail
         })));
     } catch (err) {
         console.error('Products by catid error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-app.get('/products/:catid-:catname', async (req, res) => {
-    try {
-        const catidError = validateCategoryId(req.params.catid);
-        if (catidError) return res.status(400).json({ error: catidError });
-
-        const [results] = await db.query('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.catid = c.catid WHERE p.catid = ?', [req.params.catid]);
-        res.json(results.map(row => ({
-            pid: row.pid,
-            catid: row.catid,
-            name: escapeHtml(row.name),
-            price: row.price,
-            description: escapeHtml(row.description),
-            image: row.image,
-            thumbnail: row.thumbnail,
-            categoryName: escapeHtml(row.category_name),
-            seoName: generateSeoName(row.name),
-            categorySeoName: generateSeoName(row.category_name)
-        })));
-    } catch (err) {
-        console.error('Products by SEO catid error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).send('Internal Server Error');
     }
 });
 
 app.get('/product/:pid', async (req, res) => {
     try {
-        const [results] = await db.query('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.catid = c.catid WHERE p.pid = ?', [req.params.pid]);
+        const [results] = await db.query('SELECT * FROM products WHERE pid = ?', [req.params.pid]);
         const product = results[0] || {};
         res.json({
             pid: product.pid,
-            catid: product.catid,
             name: escapeHtml(product.name || ''),
             price: product.price || 0,
             description: escapeHtml(product.description || ''),
             image: product.image || '',
-            categoryName: escapeHtml(product.category_name || ''),
-            seoName: generateSeoName(product.name || ''),
-            categorySeoName: generateSeoName(product.category_name || '')
+            thumbnail: product.thumbnail || ''
         });
     } catch (err) {
         console.error('Product error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).send('Internal Server Error');
     }
 });
 
-app.get('/product/:catid-:catname/:pid-:productname', async (req, res) => {
-    try {
-        const [results] = await db.query('SELECT p.*, c.name AS category_name FROM products p JOIN categories c ON p.catid = c.catid WHERE p.pid = ?', [req.params.pid]);
-        const product = results[0] || {};
-        res.json({
-            pid: product.pid,
-            catid: product.catid,
-            name: escapeHtml(product.name || ''),
-            price: product.price || 0,
-            description: escapeHtml(product.description || ''),
-            image: product.image || '',
-            categoryName: escapeHtml(product.category_name || ''),
-            seoName: generateSeoName(product.name || ''),
-            categorySeoName: generateSeoName(product.category_name || '')
-        });
-    } catch (err) {
-        console.error('Product by SEO pid error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+app.get('/orders', authenticate, (req, res) => {
+    if (!req.user) {
+        return res.redirect('/login');
     }
-});
-
-// Redirect old URLs for backward compatibility
-app.get('/products/:catid', async (req, res) => {
-    try {
-        const [categories] = await db.query('SELECT name FROM categories WHERE catid = ?', [req.params.catid]);
-        if (!categories.length) return res.status(404).json({ error: 'Category not found' });
-        const seoName = generateSeoName(categories[0].name);
-        res.redirect(301, `/products/${req.params.catid}-${seoName}`);
-    } catch (err) {
-        console.error('Redirect products error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-app.get('/product/:pid', async (req, res) => {
-    try {
-        const [products] = await db.query('SELECT p.pid, p.name, c.catid, c.name AS category_name FROM products p JOIN categories c ON p.catid = c.catid WHERE p.pid = ?', [req.params.pid]);
-        if (!products.length) return res.status(404).json({ error: 'Product not found' });
-        const product = products[0];
-        const seoName = generateSeoName(product.name);
-        const categorySeoName = generateSeoName(product.category_name);
-        res.redirect(301, `/product/${product.catid}-${categorySeoName}/${product.pid}-${seoName}`);
-    } catch (err) {
-        console.error('Redirect product error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+    res.sendFile(path.join(__dirname, 'orders.html'));
 });
 
 app.get('/orders-data', authenticate, async (req, res) => {
@@ -373,7 +275,11 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
         const [orders] = await db.query('SELECT * FROM orders ORDER BY created_at DESC');
         res.json(orders.map(order => ({
             order_id: order.orderID,
-            email: order.user_email,
+            email:
+
+
+
+            order.user_email,
             total_amount: order.total_price,
             items: order.items,
             status: order.status,
@@ -385,34 +291,10 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-app.post('/signup', validateCsrfToken, async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        const emailError = validateEmail(email);
-        const passwordError = validatePassword(password);
-        if (emailError || passwordError) {
-            return res.status(400).json({ error: emailError || passwordError });
-        }
-
-        const [existingUsers] = await db.query('SELECT email FROM users WHERE email = ?', [email]);
-        if (existingUsers.length > 0) {
-            return res.status(400).json({ error: 'Email already registered' });
-        }
-
-        const hash = await bcrypt.hash(password, 10);
-        await db.query('INSERT INTO users (email, password, is_admin) VALUES (?, ?, ?)', [email, hash, false]);
-
-        res.json({ success: true, redirect: '/login' });
-    } catch (err) {
-        console.error('Signup error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
 app.post('/login', validateCsrfToken, async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log('Login attempt:', { email, domain: req.hostname });
         
         const connection = await db.getConnection();
         
@@ -444,6 +326,7 @@ app.post('/login', validateCsrfToken, async (req, res) => {
 
             connection.release();
 
+            console.log('Setting authToken cookie for:', req.hostname);
             res.cookie('authToken', authToken, {
                 httpOnly: true,
                 secure: true,
@@ -478,13 +361,15 @@ app.post('/login', validateCsrfToken, async (req, res) => {
 app.post('/logout', validateCsrfToken, authenticate, async (req, res) => {
     try {
         await db.query('UPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
+        console.log('Clearing authToken cookie for:', req.hostname);
         res.clearCookie('authToken');
         
         const newCsrfToken = generateCsrfToken();
+        console.log('Setting new csrfToken cookie for:', req.hostname);
         res.cookie('csrfToken', newCsrfToken, { 
             httpOnly: true, 
             secure: true, 
-            sameSite: 'strict' 
+            sameSite: 'strict'
         });
         
         res.json({ 
@@ -511,6 +396,7 @@ app.post('/change-password', validateCsrfToken, authenticate, async (req, res) =
         const hash = await bcrypt.hash(newPassword, 10);
         await db.query('UPDATE users SET password = ?, auth_token = NULL WHERE userid = ?', [hash, req.user.userid]);
         
+        console.log('Clearing authToken and csrfToken cookies for:', req.hostname);
         res.clearCookie('authToken');
         res.clearCookie('csrfToken');
         res.json({ success: true, redirect: '/login' });
@@ -596,9 +482,7 @@ app.post('/paypal-webhook', async (req, res) => {
         console.log('PayPal webhook received:', req.body);
 
         // Verify PayPal IPN
-        const verificationUrl = process.env.PAYPAL_ENV === 'production' 
-            ? 'https://www.paypal.com/cgi-bin/webscr' 
-            : 'https://www.sandbox.paypal.com/cgi-bin/webscr';
+        const verificationUrl = 'https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_notify-validate';
         const verificationBody = `cmd=_notify-validate&${new URLSearchParams(req.body).toString()}`;
         const verificationResponse = await fetch(verificationUrl, {
             method: 'POST',
@@ -609,7 +493,7 @@ app.post('/paypal-webhook', async (req, res) => {
 
         if (verificationResult !== 'VERIFIED') {
             console.error('PayPal verification failed:', verificationResult);
-            return res.status(400).json({ error: 'Invalid PayPal notification' });
+            return res.status(400).send('Invalid PayPal notification');
         }
 
         // Check if transaction already processed
@@ -617,7 +501,7 @@ app.post('/paypal-webhook', async (req, res) => {
         const [existing] = await db.query('SELECT transaction_id FROM transactions WHERE paypal_txn_id = ?', [paypalTxnId]);
         if (existing.length > 0) {
             console.warn('Transaction already processed:', paypalTxnId);
-            return res.status(200).json({ success: true });
+            return res.status(200).send('OK');
         }
 
         // Fetch order
@@ -625,10 +509,11 @@ app.post('/paypal-webhook', async (req, res) => {
         const [orders] = await db.query('SELECT * FROM orders WHERE orderID = ?', [orderID]);
         if (orders.length === 0) {
             console.error('Order not found:', orderID);
-            return res.status(400).json({ error: 'Order not found' });
+            return res.status(400).send('Order not found');
         }
 
         const order = orders[0];
+        // Check if order.items is already an object; if not, parse it
         const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
 
         // Regenerate digest
@@ -645,7 +530,7 @@ app.post('/paypal-webhook', async (req, res) => {
 
         if (regeneratedDigest !== order.digest) {
             console.error('Digest mismatch:', regeneratedDigest, order.digest);
-            return res.status(400).json({ error: 'Digest validation failed' });
+            return res.status(400).send('Digest validation failed');
         }
 
         // Save transaction with product list
@@ -667,10 +552,10 @@ app.post('/paypal-webhook', async (req, res) => {
         const status = req.body.payment_status === 'Completed' ? 'completed' : 'failed';
         await db.query('UPDATE orders SET status = ? WHERE orderID = ?', [status, orderID]);
 
-        res.status(200).json({ success: true });
+        res.status(200).send('OK');
     } catch (err) {
         console.error('Webhook error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).send('Internal Server Error');
     }
 });
 
@@ -681,38 +566,45 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
     const nameError = validateTextInput(name, 255, 'Product name');
     const descError = validateTextInput(description, 1000, 'Description');
     const priceError = validatePrice(price);
-    const catidError = validateCategoryId(catid);
-    if (nameError || descError || priceError || catidError) {
-        if (imagePath) fs.unlinkSync(req.file.path); // Clean up uploaded file
-        return res.status(400).json({ error: nameError || descError || priceError || catidError });
+    if (nameError || descError || priceError || !catid) {
+        return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
     }
 
     const sanitizedName = sanitizeHtml(name);
     const sanitizedDesc = sanitizeHtml(description);
 
-    try {
-        if (imagePath) {
-            if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
-                fs.unlinkSync(req.file.path); // Clean up uploaded file
-                return res.status(400).json({ error: 'Invalid image type. Only JPEG, PNG, or GIF allowed.' });
-            }
-
-            const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
-            await sharp(req.file.path)
-                .resize(200, 200)
-                .toFile(path.join(__dirname, thumbnailPath));
-
-            const sql = 'INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)';
-            await db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath]);
-        } else {
-            const sql = 'INSERT INTO products (catid, name, price, description) VALUES (?, ?, ?, ?)';
-            await db.query(sql, [catid, sanitizedName, price, sanitizedDesc]);
+    if (imagePath) {
+        if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
+            return res.status(400).send('Invalid image type. Only JPEG, PNG, or GIF allowed.');
         }
-        res.json({ success: true, message: 'Product added' });
-    } catch (err) {
-        if (imagePath) fs.unlinkSync(req.file.path); // Clean up uploaded file
-        console.error('Add product error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+
+        sharp(req.file.path)
+            .resize(200, 200)
+            .jpeg({ quality: 80 })
+            .toFile(`uploads/thumbnail-${req.file.filename}`, (err) => {
+                if (err) {
+                    console.error('Image resize error:', err);
+                    return res.status(500).send('Internal Server Error');
+                }
+                const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
+                const sql = 'INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)';
+                db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath], (err) => {
+                    if (err) {
+                        console.error('Add product error:', err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+                    res.send('Product added');
+                });
+            });
+    } else {
+        const sql = 'INSERT INTO products (catid, name, price, description) VALUES (?, ?, ?, ?)';
+        db.query(sql, [catid, sanitizedName, price, sanitizedDesc], (err) => {
+            if (err) {
+                console.error('Add product error:', err);
+                return res.status(500).send('Internal Server Error');
+            }
+            res.send('Product added');
+        });
     }
 });
 
@@ -724,97 +616,103 @@ app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload
     const nameError = validateTextInput(name, 255, 'Product name');
     const descError = validateTextInput(description, 1000, 'Description');
     const priceError = validatePrice(price);
-    const catidError = validateCategoryId(catid);
-    if (nameError || descError || priceError || catidError) {
-        if (imagePath) fs.unlinkSync(req.file.path); // Clean up uploaded file
-        return res.status(400).json({ error: nameError || descError || priceError || catidError });
+    if (nameError || descError || priceError || !catid) {
+        return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
     }
 
     const sanitizedName = sanitizeHtml(name);
     const sanitizedDesc = sanitizeHtml(description);
 
-    try {
-        if (imagePath) {
-            if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
-                fs.unlinkSync(req.file.path); // Clean up uploaded file
-                return res.status(400).json({ error: 'Invalid image type. Only JPEG, PNG, or GIF allowed.' });
-            }
-
-            const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
-            await sharp(req.file.path)
-                .resize(200, 200)
-                .toFile(path.join(__dirname, thumbnailPath));
-
-            const sql = 'UPDATE products SET catid=?, name=?, price=?, description=?, image=?, thumbnail=? WHERE pid=?';
-            await db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath, pid]);
-        } else {
-            const sql = 'UPDATE products SET catid=?, name=?, price=?, description=? WHERE pid=?';
-            await db.query(sql, [catid, sanitizedName, price, sanitizedDesc, pid]);
+    if (imagePath) {
+        if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
+            return res.status(400).send('Invalid image type. Only JPEG, PNG, or GIF allowed.');
         }
-        res.json({ success: true, message: 'Product updated' });
-    } catch (err) {
-        if (imagePath) fs.unlinkSync(req.file.path); // Clean up uploaded file
-        console.error('Update product error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+
+        sharp(req.file.path)
+            .resize(200, 200)
+            .jpeg({ quality: 80 })
+            .toFile(`uploads/thumbnail-${req.file.filename}`, (err) => {
+                if (err) {
+                    console.error('Image resize error:', err);
+                    return res.status(500).send('Internal Server Error');
+                }
+                const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
+                const sql = 'UPDATE products SET catid=?, name=?, price=?, description=?, image=?, thumbnail=? WHERE pid=?';
+                db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath, pid], (err) => {
+                    if (err) {
+                        console.error('Update product error:', err);
+                        return res.status(500).send('Internal Server Error');
+                    }
+                    res.send('Product updated');
+                });
+            });
+    } else {
+        const sql = 'UPDATE products SET catid=?, name=?, price=?, description=? WHERE pid=?';
+        db.query(sql, [catid, sanitizedName, price, sanitizedDesc, pid], (err) => {
+            if (err) {
+                console.error('Update product error:', err);
+                return res.status(500).send('Internal Server Error');
+            }
+            res.send('Product updated');
+        });
     }
 });
 
 app.post('/add-category', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
     const { name } = req.body;
     const nameError = validateTextInput(name, 255, 'Category name');
-    if (nameError) return res.status(400).json({ error: nameError });
+    if (nameError) return res.status(400).send(nameError);
 
     const sanitizedName = sanitizeHtml(name);
-    try {
-        await db.query('INSERT INTO categories (name) VALUES (?)', [sanitizedName]);
-        res.json({ success: true, message: 'Category added' });
-    } catch (err) {
-        console.error('Add category error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+    db.query('INSERT INTO categories (name) VALUES (?)', [sanitizedName], (err) => {
+        if (err) {
+            console.error('Add category error:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.send('Category added');
+    });
 });
 
 app.put('/update-category/:catid', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
     const { name } = req.body;
     const catid = req.params.catid;
     const nameError = validateTextInput(name, 255, 'Category name');
-    const catidError = validateCategoryId(catid);
-    if (nameError || catidError) return res.status(400).json({ error: nameError || catidError });
+    if (nameError) return res.status(400).send(nameError);
 
     const sanitizedName = sanitizeHtml(name);
-    try {
-        await db.query('UPDATE categories SET name=? WHERE catid=?', [sanitizedName, catid]);
-        res.json({ success: true, message: 'Category updated' });
-    } catch (err) {
-        console.error('Update category error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+    db.query('UPDATE categories SET name=? WHERE catid=?', [sanitizedName, catid], (err) => {
+        if (err) {
+            console.error('Update category error:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.send('Category updated');
+    });
 });
 
-app.delete('/delete-product/:pid', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
-    try {
-        await db.query('DELETE FROM products WHERE pid = ?', [req.params.pid]);
-        res.json({ success: true, message: 'Product deleted' });
-    } catch (err) {
-        console.error('Delete product error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+app.delete('/delete-product/:pid', validateCsrfToken, authenticate, isAdmin, (req, res) => {
+    db.query('DELETE FROM products WHERE pid = ?', [req.params.pid], (err) => {
+        if (err) {
+            console.error('Delete product error:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.send('Product deleted');
+    });
 });
 
-app.delete('/delete-category/:catid', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
-    try {
-        await db.query('DELETE FROM categories WHERE catid = ?', [req.params.catid]);
-        res.json({ success: true, message: 'Category deleted' });
-    } catch (err) {
-        console.error('Delete category error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+app.delete('/delete-category/:catid', validateCsrfToken, authenticate, isAdmin, (req, res) => {
+    db.query('DELETE FROM categories WHERE catid = ?', [req.params.catid], (err) => {
+        if (err) {
+            console.error('Delete category error:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+        res.send('Category deleted');
+    });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
     console.error('Server error:', err.stack);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).send('Internal Server Error');
 });
 
 http.createServer(app).listen(3443, '0.0.0.0', () => {

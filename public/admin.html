@@ -10,13 +10,6 @@
    <body>
       <h1>Admin Panel</h1>
       <p class="admin-back-link"><a href="/">← Back to Home</a></p>
-      <nav>
-         <ul>
-            <li><a href="/signup">Sign Up</a></li>
-            <li><a href="/login">Profile</a></li>
-            <li><a href="/orders">My Orders</a></li>
-         </ul>
-      </nav>
       <form id="product-form">
          <h2>Manage Products</h2>
          <input type="hidden" name="csrfToken" id="csrfToken">
@@ -31,10 +24,6 @@
          <br>
          <label for="image">Product Image:</label>
          <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif"><br>
-         <div id="drop-zone" style="border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 10px 0;">
-            Drag and drop image here or click to select
-         </div>
-         <img id="image-preview" style="max-width: 200px; display: none; margin: 10px 0;" alt="Image Preview">
          <div id="image-error" class="error"></div>
          <div id="product-form-error" class="error"></div>
          <button type="submit">Add Product</button>
@@ -84,15 +73,19 @@
              return null;
          }
          
-         fetch('https://ierg4210.koreacentral.cloudapp.azure.com/user', { credentials: 'include' })
+         fetch('/user', { credentials: 'include' })
              .then(res => res.json())
              .then(data => {
                  if (data.email === 'Guest') {
                      window.location.href = '/login';
                  }
+             })
+             .catch(err => {
+                 console.error('User fetch error:', err);
+                 window.location.href = '/login';
              });
          
-         fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
+         fetch('/csrf-token', { credentials: 'include' })
              .then(res => res.json())
              .then(data => {
                  csrfToken = data.csrfToken;
@@ -103,7 +96,7 @@
              .catch(err => console.error('CSRF fetch error:', err));
          
          function loadCategories() {
-             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/categories')
+             fetch('/categories')
                  .then(response => {
                      if (!response.ok) throw new Error('Categories fetch failed');
                      return response.json();
@@ -122,7 +115,7 @@
          }
          
          function loadProducts() {
-             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/products')
+             fetch('/products')
                  .then(response => {
                      if (!response.ok) throw new Error('Products fetch failed');
                      return response.json();
@@ -145,7 +138,7 @@
          }
          
          function loadCategoryList() {
-             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/categories')
+             fetch('/categories')
                  .then(response => {
                      if (!response.ok) throw new Error('Categories fetch failed');
                      return response.json();
@@ -167,7 +160,7 @@
          }
          
          function loadOrders() {
-             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/admin-orders', { credentials: 'include' })
+             fetch('/admin-orders', { credentials: 'include' })
                  .then(response => {
                      if (!response.ok) throw new Error('Orders fetch failed');
                      return response.json();
@@ -191,53 +184,6 @@
                      });
                  })
                  .catch(err => console.error('Orders error:', err));
-         }
-         
-         // Drag-and-Drop Functionality
-         const dropZone = document.getElementById('drop-zone');
-         const imageInput = document.getElementById('image');
-         const imagePreview = document.getElementById('image-preview');
-         
-         dropZone.addEventListener('dragover', (e) => {
-             e.preventDefault();
-             dropZone.style.backgroundColor = '#e1e1e1';
-         });
-         
-         dropZone.addEventListener('dragleave', () => {
-             dropZone.style.backgroundColor = 'transparent';
-         });
-         
-         dropZone.addEventListener('drop', (e) => {
-             e.preventDefault();
-             dropZone.style.backgroundColor = 'transparent';
-             const file = e.dataTransfer.files[0];
-             if (file && ['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-                 const dataTransfer = new DataTransfer();
-                 dataTransfer.items.add(file);
-                 imageInput.files = dataTransfer.files;
-                 displayPreview(file);
-             } else {
-                 document.getElementById('image-error').textContent = 'Invalid image type. Only JPEG, PNG, or GIF allowed';
-             }
-         });
-         
-         dropZone.addEventListener('click', () => {
-             imageInput.click();
-         });
-         
-         imageInput.addEventListener('change', () => {
-             if (imageInput.files[0]) {
-                 displayPreview(imageInput.files[0]);
-             }
-         });
-         
-         function displayPreview(file) {
-             const reader = new FileReader();
-             reader.onload = (e) => {
-                 imagePreview.src = e.target.result;
-                 imagePreview.style.display = 'block';
-             };
-             reader.readAsDataURL(file);
          }
          
          document.getElementById('product-form').addEventListener('submit', (e) => {
@@ -270,7 +216,7 @@
              }
          
              const formData = new FormData(e.target);
-             const url = isUpdate ? `https://ierg4210.koreacentral.cloudapp.azure.com/update-product/${isUpdate}` : 'https://ierg4210.koreacentral.cloudapp.azure.com/add-product';
+             const url = isUpdate ? `/update-product/${isUpdate}` : '/add-product';
              fetch(url, {
                  method: isUpdate ? 'PUT' : 'POST',
                  body: formData,
@@ -287,7 +233,6 @@
                          delete e.target.dataset.pid;
                      } else {
                          e.target.reset();
-                         imagePreview.style.display = 'none';
                      }
                      document.getElementById('csrfToken').value = csrfToken;
                      loadProducts();
@@ -310,7 +255,7 @@
                  return;
              }
          
-             const url = isUpdate ? `https://ierg4210.koreacentral.cloudapp.azure.com/update-category/${isUpdate}` : 'https://ierg4210.koreacentral.cloudapp.azure.com/add-category';
+             const url = isUpdate ? `/update-category/${isUpdate}` : '/add-category';
              fetch(url, {
                  method: isUpdate ? 'PUT' : 'POST',
                  headers: { 'Content-Type': 'application/json' },
@@ -353,7 +298,7 @@
              }
          
              const formData = new FormData(e.target);
-             fetch('https://ierg4210.koreacentral.cloudapp.azure.com/change-password', {
+             fetch('/change-password', {
                  method: 'POST',
                  body: formData,
                  credentials: 'include'
@@ -362,6 +307,8 @@
                      if (!response.ok) {
                          return response.text().then(text => { throw new Error(text); });
                      }
+                     alert('Password changed successfully. Please log in again.');
+                     window.location.href = '/login';
                  })
                  .catch(err => {
                      console.error('Password change error:', err);
@@ -371,7 +318,7 @@
          
          function deleteProduct(pid) {
              if (confirm('Are you sure?')) {
-                 fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/delete-product/${pid}`, {
+                 fetch(`/delete-product/${pid}`, {
                      method: 'DELETE',
                      headers: { 'X-CSRF-Token': csrfToken },
                      credentials: 'include'
@@ -390,7 +337,7 @@
          
          function deleteCategory(catid) {
              if (confirm('Are you sure?')) {
-                 fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/delete-category/${catid}`, {
+                 fetch(`/delete-category/${catid}`, {
                      method: 'DELETE',
                      headers: { 'X-CSRF-Token': csrfToken },
                      credentials: 'include'
@@ -410,77 +357,25 @@
          
          function editProduct(pid, name, price, description, catid) {
              const form = document.getElementById('product-form');
-             form.innerHTML = DOMPurify.sanitize(`
-                 <h2>Edit Product</h2>
-                 <input type="hidden" name="csrfToken" id="csrfToken" value="${csrfToken}">
-                 <label for="category">Category:</label>
-                 <select id="category" name="catid" required></select><br>
-                 <label for="name">Product Name:</label>
-                 <input type="text" id="name" name="name" value="${name}" required><br>
-                 <label for="price">Price:</label>
-                 <input type="number" id="price" name="price" step="0.01" min="0" value="${price}" required><br>
-                 <label for="description">Description:</label>
-                 <textarea id="description" name="description" required>${description}</textarea><br>
-                 <label for="image">Product Image:</label>
-                 <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif"><br>
-                 <div id="drop-zone" style="border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 10px 0;">
-                     Drag and drop image here or click to select
-                 </div>
-                 <img id="image-preview" style="max-width: 200px; display: none; margin: 10px 0;" alt="Image Preview">
-                 <div id="image-error" class="error"></div>
-                 <div id="product-form-error" class="error"></div>
-                 <button type="submit">Update Product</button>
-             `);
+             document.getElementById('name').value = name;
+             document.getElementById('price').value = price;
+             document.getElementById('description').value = description;
+             document.getElementById('category').value = catid;
+             form.querySelector('button').textContent = 'Update Product';
+             if (!form.dataset.original) {
+                 form.dataset.original = form.innerHTML;
+             }
              form.dataset.pid = pid;
-             form.dataset.original = document.getElementById('product-form').dataset.original || form.innerHTML;
-             loadCategories();
-             setTimeout(() => document.getElementById('category').value = catid, 100);
-             // Reattach drag-and-drop event listeners
-             const dropZone = document.getElementById('drop-zone');
-             const imageInput = document.getElementById('image');
-             const imagePreview = document.getElementById('image-preview');
-             dropZone.addEventListener('dragover', (e) => {
-                 e.preventDefault();
-                 dropZone.style.backgroundColor = '#e1e1e1';
-             });
-             dropZone.addEventListener('dragleave', () => {
-                 dropZone.style.backgroundColor = 'transparent';
-             });
-             dropZone.addEventListener('drop', (e) => {
-                 e.preventDefault();
-                 dropZone.style.backgroundColor = 'transparent';
-                 const file = e.dataTransfer.files[0];
-                 if (file && ['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
-                     const dataTransfer = new DataTransfer();
-                     dataTransfer.items.add(file);
-                     imageInput.files = dataTransfer.files;
-                     displayPreview(file);
-                 } else {
-                     document.getElementById('image-error').textContent = 'Invalid image type. Only JPEG, PNG, or GIF allowed';
-                 }
-             });
-             dropZone.addEventListener('click', () => {
-                 imageInput.click();
-             });
-             imageInput.addEventListener('change', () => {
-                 if (imageInput.files[0]) {
-                     displayPreview(imageInput.files[0]);
-                 }
-             });
          }
          
          function editCategory(catid, name) {
              const form = document.getElementById('category-form');
-             form.innerHTML = DOMPurify.sanitize(`
-                 <h2>Edit Category</h2>
-                 <input type="hidden" name="csrfToken" id="csrfTokenCat" value="${csrfToken}">
-                 <label for="category-name">Category Name:</label>
-                 <input type="text" id="category-name" name="name" value="${name}" required><br>
-                 <div id="category-form-error" class="error"></div>
-                 <button type="submit">Update Category</button>
-             `);
+             document.getElementById('category-name').value = name;
+             form.querySelector('button').textContent = 'Update Category';
+             if (!form.dataset.original) {
+                 form.dataset.original = form.innerHTML;
+             }
              form.dataset.catid = catid;
-             form.dataset.original = document.getElementById('category-form').dataset.original || form.innerHTML;
          }
          
          window.addEventListener('load', () => {
@@ -492,6 +387,5 @@
              loadOrders();
          });
       </script>
-      <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353a7e07dc3b0b7',t:'MTc0NTQ3NzMxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d62e31bd28',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355c62f98f253e5',t:'MTc0NTQ5OTUyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c7d296fc7a6773',t:'MTc0NjY5NTQxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+   </body>
 </html>
