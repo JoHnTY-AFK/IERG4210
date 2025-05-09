@@ -189,7 +189,7 @@ app.get('/categories', async (req, res) => {
 app.get('/products', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 4; // Changed to 4 products per page
+        const limit = parseInt(req.query.limit) || 8; // Changed to 8 products per page
         const offset = (page - 1) * limit;
 
         // Validate pagination parameters
@@ -235,7 +235,7 @@ app.get('/products/:catid', async (req, res) => {
     try {
         const catid = parseInt(req.params.catid);
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 4; // Changed to 4 products per page
+        const limit = parseInt(req.query.limit) || 8; // Changed to 8 products per page
         const offset = (page - 1) * limit;
 
         // Validate inputs

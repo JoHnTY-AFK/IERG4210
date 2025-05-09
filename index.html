@@ -188,7 +188,7 @@
                      document.getElementById('product-list').innerHTML = '<div class="loading" id="loading">Loading more products...</div>';
                  }
          
-                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=4` : `/products?page=${currentPage}&limit=4`;
+                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=8` : `/products?page=${currentPage}&limit=8`;
                  console.log(`Fetching products: ${url}`); // Debug log
                  const startTime = Date.now();
                  fetch(url)
