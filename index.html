@@ -6,6 +6,18 @@
       <title>Dummy Shopping Website</title>
       <link rel="stylesheet" href="/styles/main.css">
       <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+      <style>
+         .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+            color: #555;
+         }
+         .loading.visible {
+            display: block;
+         }
+      </style>
    </head>
    <body>
       <header>
@@ -34,7 +46,9 @@
             <option value="">-- Select a Category --</option>
          </select>
       </section>
-      <section class="product-list" id="product-list"></section>
+      <section class="product-list" id="product-list">
+         <div class="loading" id="loading">Loading more products...</div>
+      </section>
       <div id="shopping-cart" class="shopping-cart">
          <button class="close-cart">×</button>
          <h3>Shopping Cart</h3>
@@ -46,6 +60,11 @@
       <script src="/cart.js"></script>
       <script>
          document.addEventListener('DOMContentLoaded', () => {
+             let currentPage = 1;
+             let isLoading = false;
+             let hasMore = true;
+             let currentCatid = null;
+
              fetch('/csrf-token', { credentials: 'include' })
                  .then(res => res.json())
                  .then(data => {
@@ -140,6 +159,7 @@
                          const catid = urlParams.get('catid');
                          if (catid) {
                              categorySelect.value = catid;
+                             currentCatid = catid;
                              loadProducts(catid);
                              document.getElementById('breadcrumb-category').textContent = categorySelect.options[categorySelect.selectedIndex].text;
                          } else {
@@ -149,16 +169,37 @@
                      .catch(err => console.error('Categories error:', err));
              }
          
-             function loadProducts(catid = null) {
-                 const url = catid ? `/products/${catid}` : '/products';
+             function showLoading() {
+                 document.getElementById('loading').classList.add('visible');
+             }
+         
+             function hideLoading() {
+                 document.getElementById('loading').classList.remove('visible');
+             }
+         
+             function loadProducts(catid = null, reset = false) {
+                 if (isLoading || !hasMore) return;
+                 isLoading = true;
+                 showLoading();
+         
+                 if (reset) {
+                     currentPage = 1;
+                     hasMore = true;
+                     document.getElementById('product-list').innerHTML = '<div class="loading" id="loading">Loading more products...</div>';
+                 }
+         
+                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=12` : `/products?page=${currentPage}&limit=12`;
                  fetch(url)
                      .then(response => {
                          if (!response.ok) throw new Error('Products fetch failed');
                          return response.json();
                      })
-                     .then(products => {
+                     .then(data => {
                          const productList = document.getElementById('product-list');
-                         productList.innerHTML = '';
+                         const products = data.products;
+                         hasMore = currentPage < data.pagination.totalPages;
+                         currentPage++;
+         
                          products.forEach(product => {
                              const productDiv = document.createElement('div');
                              productDiv.className = 'product';
@@ -172,25 +213,52 @@
                                  <p>$${product.price}</p>
                                  <button class="add-to-cart" data-pid="${product.pid}" data-name="${product.name}" data-price="${product.price}">Add to Cart</button>
                              `);
-                             productList.appendChild(productDiv);
+                             productList.insertBefore(productDiv, document.getElementById('loading'));
                          });
+         
+                         if (!hasMore) {
+                             hideLoading();
+                             const noMore = document.createElement('div');
+                             noMore.className = 'no-more';
+                             noMore.textContent = 'No more products to load';
+                             productList.insertBefore(noMore, document.getElementById('loading'));
+                         }
                      })
-                     .catch(err => console.error('Products error:', err));
+                     .catch(err => {
+                         console.error('Products error:', err);
+                         document.getElementById('product-list').innerHTML = '<p>Error loading products</p>';
+                     })
+                     .finally(() => {
+                         isLoading = false;
+                         if (hasMore) hideLoading();
+                     });
+             }
+         
+             function handleScroll() {
+                 const productList = document.getElementById('product-list');
+                 const rect = productList.getBoundingClientRect();
+                 const isBottom = rect.bottom <= window.innerHeight + 100; // Trigger 100px before bottom
+                 if (isBottom && !isLoading && hasMore) {
+                     loadProducts(currentCatid);
+                 }
              }
          
              document.getElementById('category-select').addEventListener('change', (e) => {
-                 const catid = e.target.value;
-                 if (catid) {
-                     history.pushState({}, '', `?catid=${catid}`);
-                     loadProducts(catid);
+                 currentCatid = e.target.value;
+                 if (currentCatid) {
+                     history.pushState({}, '', `?catid=${currentCatid}`);
+                     loadProducts(currentCatid, true);
                      document.getElementById('breadcrumb-category').textContent = e.target.options[e.target.selectedIndex].text;
                  } else {
                      history.pushState({}, '', '/');
-                     loadProducts();
+                     loadProducts(null, true);
                      document.getElementById('breadcrumb-category').textContent = 'All Categories';
                  }
              });
+         
+             window.addEventListener('scroll', handleScroll);
          });
       </script>
+   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d16b88fe247ba6',t:'MTc0Njc5NjA0OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
    </body>
 </html>

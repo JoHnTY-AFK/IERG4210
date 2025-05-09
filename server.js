@@ -188,16 +188,39 @@ app.get('/categories', async (req, res) => {
 
 app.get('/products', async (req, res) => {
     try {
-        const [results] = await db.query('SELECT * FROM products');
-        res.json(results.map(row => ({
-            pid: row.pid,
-            catid: row.catid,
-            name: escapeHtml(row.name),
-            price: row.price,
-            description: escapeHtml(row.description),
-            image: row.image,
-            thumbnail: row.thumbnail
-        })));
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12; // Default to 12 products per page
+        const offset = (page - 1) * limit;
+
+        // Validate pagination parameters
+        if (page < 1 || limit < 1) {
+            return res.status(400).json({ error: 'Invalid page or limit' });
+        }
+
+        // Get total count
+        const [countResult] = await db.query('SELECT COUNT(*) as total FROM products');
+        const total = countResult[0].total;
+        const totalPages = Math.ceil(total / limit);
+
+        // Get paginated products
+        const [results] = await db.query('SELECT * FROM products LIMIT ? OFFSET ?', [limit, offset]);
+        res.json({
+            products: results.map(row => ({
+                pid: row.pid,
+                catid: row.catid,
+                name: escapeHtml(row.name),
+                price: row.price,
+                description: escapeHtml(row.description),
+                image: row.image,
+                thumbnail: row.thumbnail
+            })),
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages
+            }
+        });
     } catch (err) {
         console.error('Products error:', err);
         res.status(500).send('Internal Server Error');
@@ -206,16 +229,40 @@ app.get('/products', async (req, res) => {
 
 app.get('/products/:catid', async (req, res) => {
     try {
-        const [results] = await db.query('SELECT * FROM products WHERE catid = ?', [req.params.catid]);
-        res.json(results.map(row => ({
-            pid: row.pid,
-            catid: row.catid,
-            name: escapeHtml(row.name),
-            price: row.price,
-            description: escapeHtml(row.description),
-            image: row.image,
-            thumbnail: row.thumbnail
-        })));
+        const catid = parseInt(req.params.catid);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12; // Default to 12 products per page
+        const offset = (page - 1) * limit;
+
+        // Validate inputs
+        if (isNaN(catid) || page < 1 || limit < 1) {
+            return res.status(400).json({ error: 'Invalid category ID, page, or limit' });
+        }
+
+        // Get total count
+        const [countResult] = await db.query('SELECT COUNT(*) as total FROM products WHERE catid = ?', [catid]);
+        const total = countResult[0].total;
+        const totalPages = Math.ceil(total / limit);
+
+        // Get paginated products
+        const [results] = await db.query('SELECT * FROM products WHERE catid = ? LIMIT ? OFFSET ?', [catid, limit, offset]);
+        res.json({
+            products: results.map(row => ({
+                pid: row.pid,
+                catid: row.catid,
+                name: escapeHtml(row.name),
+                price: row.price,
+                description: escapeHtml(row.description),
+                image: row.image,
+                thumbnail: row.thumbnail
+            })),
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages
+            }
+        });
     } catch (err) {
         console.error('Products by catid error:', err);
         res.status(500).send('Internal Server Error');
@@ -275,11 +322,7 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
         const [orders] = await db.query('SELECT * FROM orders ORDER BY created_at DESC');
         res.json(orders.map(order => ({
             order_id: order.orderID,
-            email:
-
-
-
-            order.user_email,
+            email: order.user_email,
             total_amount: order.total_price,
             items: order.items,
             status: order.status,
