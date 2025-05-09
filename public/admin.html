@@ -12,8 +12,8 @@
         <h1>Admin Panel</h1>
         <nav>
             <ul>
-                <li><a href="/" class="back-home">Back to Homepage</a></li>
-                <li><form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link">Logout</button></form></li>
+                <li><a href="/" class="nav-button">Back to Homepage</a></li>
+                <li><form id="logout-form" method="POST" action="/logout"><button type="submit" class="nav-button">Logout</button></form></li>
             </ul>
         </nav>
     </header>
@@ -218,7 +218,7 @@
                             const li = document.createElement('li');
                             li.innerHTML = DOMPurify.sanitize(`
                                 ${product.name} - $${product.price}
-                                <a href="/product/${product.pid}" class="view-product">View</a>
+                                <a href="/product?pid=${product.pid}" target="_blank">View</a>
                                 <button class="edit-product" data-pid="${product.pid}">Edit</button>
                                 <button class="delete-product" data-pid="${product.pid}">Delete</button>
                             `);
@@ -387,10 +387,7 @@
 
             document.getElementById('product-list').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (e.target.classList.contains('view-product')) {
-                    // Let the default link behavior handle navigation
-                    return;
-                } else if (e.target.classList.contains('edit-product')) {
+                if (e.target.classList.contains('edit-product')) {
                     const pid = e.target.dataset.pid;
                     try {
                         const response = await fetch(`/product/${pid}`);
@@ -401,7 +398,6 @@
                         document.getElementById('product-description').value = DOMPurify.sanitize(product.description);
                         document.getElementById('product-form').dataset.pid = pid;
                         document.getElementById('product-submit').textContent = 'Update Product';
-                        // Switch to Manage Products section
                         showSection('manage-products');
                     } catch (err) {
                         console.error('Product fetch error:', err);
@@ -438,7 +434,6 @@
                         document.getElementById('category-name').value = DOMPurify.sanitize(category.name);
                         document.getElementById('category-form').dataset.catid = catid;
                         document.getElementById('category-submit').textContent = 'Update Category';
-                        // Switch to Manage Categories section
                         showSection('manage-categories');
                     } catch (err) {
                         console.error('Category fetch error:', err);
@@ -464,7 +459,6 @@
                 }
             });
 
-            // Function to show a specific section and hide others
             function showSection(targetId) {
                 document.querySelectorAll('.section-content').forEach(section => {
                     section.classList.remove('active');
@@ -483,11 +477,9 @@
                     targetLink.classList.add('active');
                 }
 
-                // Scroll to top
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            // Navigation link click handler
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -496,7 +488,6 @@
                 });
             });
 
-            // Back to Dashboard button handler
             document.querySelectorAll('.back-to-dashboard').forEach(button => {
                 button.addEventListener('click', () => {
                     const targetId = button.dataset.target;
