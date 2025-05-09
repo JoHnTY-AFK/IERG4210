@@ -136,22 +136,39 @@
 
             const fetchOrders = async (page) => {
                 try {
-                    const response = await fetch(`/orders-data?page=${page}`, { credentials: 'include' });
+                    // Temporarily remove the page parameter to test the base endpoint
+                    const response = await fetch(`/orders-data`, { credentials: 'include' });
                     if (!response.ok) {
                         if (response.status === 401) {
                             window.location.href = '/login';
                         }
-                        throw new Error('Failed to fetch orders');
+                        throw new Error(`Failed to fetch orders: ${response.statusText}`);
                     }
                     const data = await response.json();
+                    console.log('API Response:', data); // Debug: Log the response
+
                     const orderList = document.getElementById('order-list');
                     orderList.innerHTML = '';
 
-                    if (!data.orders || data.orders.length === 0) {
+                    let orders = [];
+                    let total = 0;
+
+                    // Handle different response formats
+                    if (Array.isArray(data)) {
+                        orders = data;
+                        total = data.length; // Fallback: assume total is the length of the array
+                    } else if (data.orders && typeof data.total === 'number') {
+                        orders = data.orders;
+                        total = data.total;
+                    } else {
+                        throw new Error('Unexpected API response format');
+                    }
+
+                    if (orders.length === 0) {
                         orderList.innerHTML = '<li>No recent orders found.</li>';
                         totalPages = 1;
                     } else {
-                        data.orders.forEach(order => {
+                        orders.forEach(order => {
                             const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
                             const itemList = items.map(item => `<li>${DOMPurify.sanitize(item.name || 'Unknown')} (Qty: ${item.quantity}, Price: $${item.price})</li>`).join('');
                             const orderItem = document.createElement('li');
@@ -166,7 +183,7 @@
                             orderList.appendChild(orderItem);
                         });
 
-                        totalPages = Math.ceil(data.total / ordersPerPage);
+                        totalPages = Math.ceil(total / ordersPerPage);
                     }
 
                     const prevButton = document.getElementById('prev-page');
@@ -178,7 +195,7 @@
                     nextButton.disabled = page === totalPages;
                 } catch (err) {
                     console.error('Orders fetch error:', err);
-                    document.getElementById('order-list').innerHTML = '<li>Error loading orders.</li>';
+                    document.getElementById('order-list').innerHTML = '<li>Error loading orders: ' + err.message + '</li>';
                 }
             };
 
