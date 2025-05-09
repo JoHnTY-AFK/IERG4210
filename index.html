@@ -178,7 +178,7 @@
              }
          
              function loadProducts(catid = null, reset = false) {
-                 if (isLoading || !hasMore) return;
+                 if (isLoading || (!hasMore && !reset)) return;
                  isLoading = true;
                  showLoading();
          
@@ -188,13 +188,18 @@
                      document.getElementById('product-list').innerHTML = '<div class="loading" id="loading">Loading more products...</div>';
                  }
          
-                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=12` : `/products?page=${currentPage}&limit=12`;
+                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=6` : `/products?page=${currentPage}&limit=6`;
+                 console.log(`Fetching products: ${url}`); // Debug log
                  fetch(url)
                      .then(response => {
-                         if (!response.ok) throw new Error('Products fetch failed');
+                         if (!response.ok) {
+                             console.error(`Fetch failed for ${url}: ${response.status} ${response.statusText}`);
+                             throw new Error('Products fetch failed');
+                         }
                          return response.json();
                      })
                      .then(data => {
+                         console.log(`Received products for catid=${catid || 'all'}:`, data); // Debug log
                          const productList = document.getElementById('product-list');
                          const products = data.products;
                          hasMore = currentPage < data.pagination.totalPages;
@@ -244,7 +249,9 @@
              }
          
              document.getElementById('category-select').addEventListener('change', (e) => {
-                 currentCatid = e.target.value;
+                 const newCatid = e.target.value;
+                 console.log(`Category selected: ${newCatid}`); // Debug log
+                 currentCatid = newCatid; // Update currentCatid
                  if (currentCatid) {
                      history.pushState({}, '', `?catid=${currentCatid}`);
                      loadProducts(currentCatid, true);
@@ -259,6 +266,5 @@
              window.addEventListener('scroll', handleScroll);
          });
       </script>
-   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d16b88fe247ba6',t:'MTc0Njc5NjA0OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
    </body>
 </html>
