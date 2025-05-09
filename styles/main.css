@@ -752,11 +752,6 @@ header nav ul li a:hover {
   font-weight: 600;
 }
 
-@keyframes glow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .orders {
