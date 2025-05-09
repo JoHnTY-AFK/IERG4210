@@ -76,6 +76,30 @@ INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
 (3, 'Citrus Perfume', 109.99, 'Liceria & Co., New Perfume, Fresh Blossoms of the Spring', '/images/product10.jpg', '/images/product10.jpg'),
 (3, 'Woody Perfume', 119.99, 'Gold Perfume Luxury Collection, Fragrant and Fresh, Borcelle, 150mL', '/images/product11.jpg', '/images/product11.jpg'),
 (3, 'Ocean Breeze Perfume', 129.99, 'Eau De Parfume, Black Sakura, Unveil your signature scent with timeless elegance in every drop', '/images/product12.jpg', '/images/product12.jpg');
+(1, 'Rose Hand Cream', 59.99, 'Hydrating Rose Cream 100mL', '/images/product13.jpg', '/images/product13.jpg'),
+(1, 'Coconut Hand Cream', 69.99, 'Nourishing Coconut Cream 50mL', '/images/product14.jpg', '/images/product14.jpg'),
+(1, 'Chamomile Hand Cream', 79.99, 'Calming Chamomile Cream 75mL', '/images/product15.jpg', '/images/product15.jpg'),
+(1, 'Honey Hand Cream', 89.99, 'Moisturizing Honey Cream 100mL', '/images/product16.jpg', '/images/product16.jpg'),
+(1, 'Almond Hand Cream', 99.99, 'Rich Almond Cream 50mL', '/images/product17.jpg', '/images/product17.jpg'),
+(1, 'Vanilla Hand Cream', 109.99, 'Smooth Vanilla Cream 75mL', '/images/product18.jpg', '/images/product18.jpg'),
+(1, 'Peppermint Hand Cream', 119.99, 'Cooling Peppermint Cream 100mL', '/images/product19.jpg', '/images/product19.jpg'),
+(1, 'Green Tea Hand Cream', 129.99, 'Antioxidant Green Tea Cream 50mL', '/images/product20.jpg', '/images/product20.jpg'),
+(2, 'Moisturizing Shampoo', 99.99, 'Hydrating Shampoo for Dry Hair 300mL', '/images/product21.jpg', '/images/product21.jpg'),
+(2, 'Clarifying Shampoo', 109.99, 'Deep Cleansing Shampoo 250mL', '/images/product22.jpg', '/images/product22.jpg'),
+(2, 'Smoothing Shampoo', 119.99, 'Frizz-Control Shampoo 300mL', '/images/product23.jpg', '/images/product23.jpg'),
+(2, 'Strengthening Shampoo', 129.99, 'Keratin-Infused Shampoo 250mL', '/images/product24.jpg', '/images/product24.jpg'),
+(2, 'Coconut Oil Shampoo', 139.99, 'Nourishing Coconut Shampoo 300mL', '/images/product25.jpg', '/images/product25.jpg'),
+(2, 'Argan Oil Shampoo', 149.99, 'Restorative Argan Shampoo 250mL', '/images/product26.jpg', '/images/product26.jpg'),
+(2, 'Tea Tree Shampoo', 159.99, 'Scalp-Soothing Tea Tree Shampoo 300mL', '/images/product27.jpg', '/images/product27.jpg'),
+(2, 'Biotin Shampoo', 169.99, 'Hair Growth Shampoo 250mL', '/images/product28.jpg', '/images/product28.jpg'),
+(3, 'Rose Perfume', 139.99, 'Elegant Rose Eau de Parfum 50mL', '/images/product29.jpg', '/images/product29.jpg'),
+(3, 'Lavender Perfume', 149.99, 'Calming Lavender Scent 75mL', '/images/product30.jpg', '/images/product30.jpg'),
+(3, 'Vanilla Perfume', 159.99, 'Warm Vanilla Fragrance 50mL', '/images/product31.jpg', '/images/product31.jpg'),
+(3, 'Sandalwood Perfume', 169.99, 'Rich Sandalwood Eau de Parfum 75mL', '/images/product32.jpg-', '/images/product32.jpg'),
+(3, 'Jasmine Perfume', 179.99, 'Exotic Jasmine Scent 50mL', '/images/product33.jpg', '/images/product33.jpg'),
+(3, 'Musk Perfume', 189.99, 'Bold Musk Fragrance 75mL', '/images/product34.jpg', '/images/product34.jpg'),
+(3, 'Amber Perfume', 199.99, 'Warm Amber Eau de Parfum 50mL', '/images/product35.jpg', '/images/product35.jpg'),
+(3, 'Oud Perfume', 209.99, 'Luxury Oud Scent 75mL', '/images/product36.jpg', '/images/product36.jpg');
 
 -- Insert initial users (passwords hashed with bcrypt)
 INSERT INTO users (email, password, is_admin) VALUES
