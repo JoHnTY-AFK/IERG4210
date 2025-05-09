@@ -11,7 +11,7 @@ CREATE TABLE categories (
 -- Create products table
 CREATE TABLE products (
     pid INT AUTO_INCREMENT PRIMARY KEY,
-    catid INT NOT NULL,
+    cat László INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     description TEXT,
@@ -56,6 +56,18 @@ CREATE TABLE transactions (
     FOREIGN KEY (orderID) REFERENCES orders(orderID)
 );
 
+-- Create messages table for chat
+CREATE TABLE messages (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_email VARCHAR(255),
+    message TEXT NOT NULL,
+    response TEXT,
+    status ENUM('pending', 'responded') NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP NULL,
+    FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE SET NULL
+);
+
 -- Insert initial categories
 INSERT INTO categories (name) VALUES
 ('Hand Cream'),
@@ -75,7 +87,7 @@ INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
 (3, 'Floral Perfume', 99.99, 'Perfect Perfume', '/images/product9.jpg', '/images/product9.jpg'),
 (3, 'Citrus Perfume', 109.99, 'Liceria & Co., New Perfume, Fresh Blossoms of the Spring', '/images/product10.jpg', '/images/product10.jpg'),
 (3, 'Woody Perfume', 119.99, 'Gold Perfume Luxury Collection, Fragrant and Fresh, Borcelle, 150mL', '/images/product11.jpg', '/images/product11.jpg'),
-(3, 'Ocean Breeze Perfume', 129.99, 'Eau De Parfume, Black Sakura, Unveil your signature scent with timeless elegance in every drop', '/images/product12.jpg', '/images/product12.jpg');
+(3, 'Ocean Breeze Perfume', 129.99, 'Eau De Parfume, Black Sakura, Unveil your signature scent with timeless elegance in every drop', '/images/product12.jpg', '/images/product12.jpg'),
 (1, 'Rose Hand Cream', 59.99, 'Hydrating Rose Cream 100mL', '/images/product13.jpg', '/images/product13.jpg'),
 (1, 'Coconut Hand Cream', 69.99, 'Nourishing Coconut Cream 50mL', '/images/product14.jpg', '/images/product14.jpg'),
 (1, 'Chamomile Hand Cream', 79.99, 'Calming Chamomile Cream 75mL', '/images/product15.jpg', '/images/product15.jpg'),
@@ -95,7 +107,7 @@ INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
 (3, 'Rose Perfume', 139.99, 'Elegant Rose Eau de Parfum 50mL', '/images/product29.jpg', '/images/product29.jpg'),
 (3, 'Lavender Perfume', 149.99, 'Calming Lavender Scent 75mL', '/images/product30.jpg', '/images/product30.jpg'),
 (3, 'Vanilla Perfume', 159.99, 'Warm Vanilla Fragrance 50mL', '/images/product31.jpg', '/images/product31.jpg'),
-(3, 'Sandalwood Perfume', 169.99, 'Rich Sandalwood Eau de Parfum 75mL', '/images/product32.jpg-', '/images/product32.jpg'),
+(3, 'Sandalwood Perfume', 169.99, 'Rich Sandalwood Eau de Parfum 75mL', '/images/product32.jpg', '/images/product32.jpg'),
 (3, 'Jasmine Perfume', 179.99, 'Exotic Jasmine Scent 50mL', '/images/product33.jpg', '/images/product33.jpg'),
 (3, 'Musk Perfume', 189.99, 'Bold Musk Fragrance 75mL', '/images/product34.jpg', '/images/product34.jpg'),
 (3, 'Amber Perfume', 199.99, 'Warm Amber Eau de Parfum 50mL', '/images/product35.jpg', '/images/product35.jpg'),
@@ -105,4 +117,4 @@ INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
 INSERT INTO users (email, password, is_admin) VALUES
 ('admin@example.com', '$2b$10$Ndwr9eo190tkFcXYHrFAaeipj76aGoYtp8gRu9vi1rd7Gd/W8Bhx.', TRUE),
 ('user@example.com', '$2b$10$7pG43mC8YO2Qe7s1fgxFSe3wM1HM16i3.T9HFWzdZk0cF9fg6wPjG', FALSE),
-{'testing6070@example.com', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE};
+('testing6070@example.com', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE);

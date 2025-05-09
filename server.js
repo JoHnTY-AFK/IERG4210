@@ -57,14 +57,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-// Serve static files (Nginx should handle /images/ and /uploads/ for optimal performance)
+// Serve static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/images', express.static(path.join(__dirname, 'images'), {
     setHeaders: (res) => {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     setHeaders: (res) => {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
@@ -100,10 +100,26 @@ const validateCsrfToken = (req, res, next) => {
 const authenticate = async (req, res, next) => {
     try {
         const authToken = req.cookies.authToken;
-        if (!authToken) return next();
+        if (!authToken) {
+            // Assign a temporary guest ID for non-logged-in users
+            if (!req.cookies.guestId) {
+                const guestId = crypto.randomBytes(16).toString('hex');
+                res.cookie('guestId', guestId, { 
+                    httpOnly: true, 
+                    secure: true, 
+                    sameSite: 'strict',
+                    maxAge: 24 * 60 * 60 * 1000 // 1 day
+                });
+            }
+            req.user = { email: 'Guest', is_admin: false };
+            return next();
+        }
         
         const [results] = await db.query('SELECT * FROM users WHERE auth_token = ?', [authToken]);
-        if (!results.length) return next();
+        if (!results.length) {
+            req.user = { email: 'Guest', is_admin: false };
+            return next();
+        }
         
         req.user = results[0];
         next();
@@ -122,7 +138,7 @@ const isAdmin = (req, res, next) => {
 const validateTextInput = (text, maxLength, fieldName) => {
     if (!text || typeof text !== 'string') return `${fieldName} is required`;
     if (text.length > maxLength) return `${fieldName} must be ${maxLength} characters or less`;
-    if (!/^[a-zA-Z0-9\s\-,.]+$/.test(text)) return `${fieldName} contains invalid characters`;
+    if (!/^[a-zA-Z0-9\s\-,.?!]+$/.test(text)) return `${fieldName} contains invalid characters`;
     return null;
 };
 
@@ -189,23 +205,19 @@ app.get('/categories', async (req, res) => {
 app.get('/products', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 8; // Changed to 8 products per page
+        const limit = parseInt(req.query.limit) || 8;
         const offset = (page - 1) * limit;
 
-        // Validate pagination parameters
         if (page < 1 || limit < 1) {
             return res.status(400).json({ error: 'Invalid page or limit' });
         }
 
-        // Get total count
         const [countResult] = await db.query('SELECT COUNT(*) as total FROM products');
         const total = countResult[0].total;
         const totalPages = Math.ceil(total / limit);
 
-        // Get paginated products
         const [results] = await db.query('SELECT * FROM products LIMIT ? OFFSET ?', [limit, offset]);
 
-        // Simulate delay for observability (1 second)
         setTimeout(() => {
             res.json({
                 products: results.map(row => ({
@@ -224,7 +236,7 @@ app.get('/products', async (req, res) => {
                     totalPages
                 }
             });
-        }, 1000); // 1000ms delay
+        }, 1000);
     } catch (err) {
         console.error('Products error:', err);
         res.status(500).send('Internal Server Error');
@@ -235,23 +247,19 @@ app.get('/products/:catid', async (req, res) => {
     try {
         const catid = parseInt(req.params.catid);
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 8; // Changed to 8 products per page
+        const limit = parseInt(req.query.limit) || 8;
         const offset = (page - 1) * limit;
 
-        // Validate inputs
         if (isNaN(catid) || page < 1 || limit < 1) {
             return res.status(400).json({ error: 'Invalid category ID, page, or limit' });
         }
 
-        // Get total count
         const [countResult] = await db.query('SELECT COUNT(*) as total FROM products WHERE catid = ?', [catid]);
         const total = countResult[0].total;
         const totalPages = Math.ceil(total / limit);
 
-        // Get paginated products
         const [results] = await db.query('SELECT * FROM products WHERE catid = ? LIMIT ? OFFSET ?', [catid, limit, offset]);
 
-        // Simulate delay for observability (1 second)
         setTimeout(() => {
             res.json({
                 products: results.map(row => ({
@@ -270,7 +278,7 @@ app.get('/products/:catid', async (req, res) => {
                     totalPages
                 }
             });
-        }, 1000); // 1000ms delay
+        }, 1000);
     } catch (err) {
         console.error('Products by catid error:', err);
         res.status(500).send('Internal Server Error');
@@ -414,6 +422,7 @@ app.post('/logout', validateCsrfToken, authenticate, async (req, res) => {
         await db.query('UPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
         console.log('Clearing authToken cookie for:', req.hostname);
         res.clearCookie('authToken');
+        res.clearCookie('guestId');
         
         const newCsrfToken = generateCsrfToken();
         console.log('Setting new csrfToken cookie for:', req.hostname);
@@ -450,6 +459,7 @@ app.post('/change-password', validateCsrfToken, authenticate, async (req, res) =
         console.log('Clearing authToken and csrfToken cookies for:', req.hostname);
         res.clearCookie('authToken');
         res.clearCookie('csrfToken');
+        res.clearCookie('guestId');
         res.json({ success: true, redirect: '/login' });
     } catch (err) {
         console.error('Password change error:', err);
@@ -507,7 +517,7 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
             console.log('Digest data:', dataToHash);
             console.log('Generated digest:', digest);
 
-            const userEmail = req.user ? req.user.email : null;
+            const userEmail = req.user && req.user.email !== 'Guest' ? req.user.email : null;
             console.log('User email:', userEmail);
             const [result] = await connection.query(
                 'INSERT INTO orders (user_email, items, total_price, digest, salt, status) VALUES (?, ?, ?, ?, ?, ?)',
@@ -532,7 +542,6 @@ app.post('/paypal-webhook', async (req, res) => {
     try {
         console.log('PayPal webhook received:', req.body);
 
-        // Verify PayPal IPN
         const verificationUrl = 'https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_notify-validate';
         const verificationBody = `cmd=_notify-validate&${new URLSearchParams(req.body).toString()}`;
         const verificationResponse = await fetch(verificationUrl, {
@@ -547,7 +556,6 @@ app.post('/paypal-webhook', async (req, res) => {
             return res.status(400).send('Invalid PayPal notification');
         }
 
-        // Check if transaction already processed
         const paypalTxnId = req.body.txn_id;
         const [existing] = await db.query('SELECT transaction_id FROM transactions WHERE paypal_txn_id = ?', [paypalTxnId]);
         if (existing.length > 0) {
@@ -555,7 +563,6 @@ app.post('/paypal-webhook', async (req, res) => {
             return res.status(200).send('OK');
         }
 
-        // Fetch order
         const orderID = parseInt(req.body.invoice);
         const [orders] = await db.query('SELECT * FROM orders WHERE orderID = ?', [orderID]);
         if (orders.length === 0) {
@@ -564,10 +571,8 @@ app.post('/paypal-webhook', async (req, res) => {
         }
 
         const order = orders[0];
-        // Check if order.items is already an object; if not, parse it
         const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
 
-        // Regenerate digest
         const currency = 'USD';
         const merchantEmail = 'testing6070@example.com';
         const salt = order.salt;
@@ -584,7 +589,6 @@ app.post('/paypal-webhook', async (req, res) => {
             return res.status(400).send('Digest validation failed');
         }
 
-        // Save transaction with product list
         await db.query(
             'INSERT INTO transactions (orderID, paypal_txn_id, payment_status, payment_amount, currency_code, payer_email, created_at, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [
@@ -599,7 +603,6 @@ app.post('/paypal-webhook', async (req, res) => {
             ]
         );
 
-        // Update order status
         const status = req.body.payment_status === 'Completed' ? 'completed' : 'failed';
         await db.query('UPDATE orders SET status = ? WHERE orderID = ?', [status, orderID]);
 
@@ -758,6 +761,96 @@ app.delete('/delete-category/:catid', validateCsrfToken, authenticate, isAdmin, 
         }
         res.send('Category deleted');
     });
+});
+
+// Chat Routes
+app.post('/send-message', validateCsrfToken, authenticate, async (req, res) => {
+    try {
+        const { message } = req.body;
+        const messageError = validateTextInput(message, 1000, 'Message');
+        if (messageError) return res.status(400).json({ error: messageError });
+
+        const sanitizedMessage = sanitizeHtml(message);
+        const userEmail = req.user.email !== 'Guest' ? req.user.email : null;
+        await db.query(
+            'INSERT INTO messages (user_email, message, status) VALUES (?, ?, ?)',
+            [userEmail, sanitizedMessage, 'pending']
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Send message error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.get('/user-messages', authenticate, async (req, res) => {
+    try {
+        const userEmail = req.user.email !== 'Guest' ? req.user.email : null;
+        const guestId = req.cookies.guestId;
+        let query = 'SELECT * FROM messages WHERE ';
+        let params = [];
+
+        if (userEmail) {
+            query += 'user_email = ?';
+            params.push(userEmail);
+        } else if (guestId) {
+            query += 'user_email IS NULL';
+            // Guest messages are not tied to guestId in this implementation
+        } else {
+            return res.json([]);
+        }
+
+        const [results] = await db.query(query, params);
+        res.json(results.map(row => ({
+            message_id: row.message_id,
+            user_email: row.user_email || 'Guest',
+            message: escapeHtml(row.message),
+            response: row.response ? escapeHtml(row.response) : null,
+            status: row.status,
+            created_at: row.created_at,
+            responded_at: row.responded_at
+        })));
+    } catch (err) {
+        console.error('User messages fetch error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.get('/admin-messages', authenticate, isAdmin, async (req, res) => {
+    try {
+        const [results] = await db.query('SELECT * FROM messages ORDER BY created_at DESC');
+        res.json(results.map(row => ({
+            message_id: row.message_id,
+            user_email: row.user_email || 'Guest',
+            message: escapeHtml(row.message),
+            response: row.response ? escapeHtml(row.response) : null,
+            status: row.status,
+            created_at: row.created_at,
+            responded_at: row.responded_at
+        })));
+    } catch (err) {
+        console.error('Admin messages fetch error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/respond-message', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
+    try {
+        const { message_id, response } = req.body;
+        const responseError = validateTextInput(response, 1000, 'Response');
+        if (responseError) return res.status(400).json({ error: responseError });
+        if (!message_id) return res.status(400).json({ error: 'Message ID is required' });
+
+        const sanitizedResponse = sanitizeHtml(response);
+        await db.query(
+            'UPDATE messages SET response = ?, status = ?, responded_at = NOW() WHERE message_id = ?',
+            [sanitizedResponse, 'responded', message_id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Respond message error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 // Error handler

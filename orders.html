@@ -13,8 +13,8 @@
         <nav>
             <ul>
                 <li><a href="/">Home</a></li>
-                <li><a href="/categories">Categories</a></li>
-                <li><a href="/about">About</a></li>
+                <li><a href="#">Categories</a></li>
+                <li><a href="#">About</a></li>
                 <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
                 <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
                 <li><form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link" style="display: none;">Logout</button></form></li>
@@ -35,14 +35,25 @@
         <ul class="cart-items"></ul>
     </div>
 
+    <div id="chat-box" class="chat-box">
+        <button id="close-chat" class="close-chat">×</button>
+        <h3>Customer Support</h3>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input">
+            <textarea id="chat-input" placeholder="Type your message..."></textarea>
+            <button id="send-message">Send</button>
+        </div>
+    </div>
+    <button id="chat-button" class="chat-button">Chat with Us</button>
+
     <footer>
         <p>© 2025 Dummy Shopping Website</p>
     </footer>
 
     <script src="/cart.js"></script>
+    <script src="/chat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Handle CSRF token for logout
             fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -86,7 +97,6 @@
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
-            // Handle user status
             fetch('/user', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -107,55 +117,49 @@
                             adminLink.style.display = 'none';
                         }
                     } else {
-                        userStatus.textContent = 'Login';
-                        userStatus.style.display = 'inline';
-                        logoutLink.style.display = 'none';
-                        ordersLink.style.display = 'none';
-                        if (adminLink) {
-                            adminLink.style.display = 'none';
-                        }
-                        userStatus.onclick = () => window.location.href = '/login';
-                        document.querySelector('.orders').innerHTML = '<p>Please log in to view your orders.</p>';
+                        window.location.href = '/login';
                     }
                 })
-                .catch(err => console.error('User fetch error:', err));
+                .catch(err => {
+                    console.error('User fetch error:', err);
+                    window.location.href = '/login';
+                });
 
-            // Fetch and display orders
             fetch('/orders-data', { credentials: 'include' })
                 .then(response => {
-                    if (!response.ok) throw new Error('Failed to fetch orders');
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/login';
+                        }
+                        throw new Error('Failed to fetch orders');
+                    }
                     return response.json();
                 })
                 .then(orders => {
                     const orderList = document.getElementById('order-list');
                     if (orders.length === 0) {
-                        orderList.innerHTML = '<p>No orders found.</p>';
+                        orderList.innerHTML = '<li>No recent orders found.</li>';
                         return;
                     }
                     orders.forEach(order => {
-                        // Check if order.items is a string; if so, parse it; otherwise, use it directly
-                        const itemsArray = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                        const items = itemsArray.map(item => 
-                            `Product #${item.pid}: ${item.quantity} x $${parseFloat(item.price).toFixed(2)}`
-                        ).join(', ');
-                        const li = document.createElement('li');
-                        // Convert total_amount to a number before calling toFixed
-                        const totalAmount = parseFloat(order.total_amount);
-                        li.innerHTML = DOMPurify.sanitize(`
-                            <p><strong>Order ID:</strong> ${order.order_id}</p>
-                            <p><strong>Total Amount:</strong> $${isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}</p>
-                            <p><strong>Items:</strong> ${items}</p>
-                            <p><strong>Status:</strong> <span class="status-${order.status}">${order.status}</span></p>
-                            <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                        const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
+                        const itemList = items.map(item => `<li>${DOMPurify.sanitize(item.name || 'Unknown')} (Qty: ${item.quantity}, Price: $${item.price})</li>`).join('');
+                        const orderItem = document.createElement('li');
+                        orderItem.innerHTML = DOMPurify.sanitize(`
+                            <p>Order ID: ${order.order_id}</p>
+                            <p>Total: $${order.total_amount}</p>
+                            <p>Status: ${order.status}</p>
+                            <p>Date: ${new Date(order.created_at).toLocaleString()}</p>
+                            <ul>${itemList}</ul>
                         `);
-                        orderList.appendChild(li);
+                        orderList.appendChild(orderItem);
                     });
                 })
                 .catch(err => {
                     console.error('Orders fetch error:', err);
-                    document.getElementById('order-list').innerHTML = '<p>Error loading orders.</p>';
+                    document.getElementById('order-list').innerHTML = '<li>Error loading orders.</li>';
                 });
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d206409f11b04c',t:'MTc0NjgwMjM4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

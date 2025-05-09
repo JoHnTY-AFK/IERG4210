@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details</title>
+    <title>Product - Dummy Shopping Website</title>
     <link rel="stylesheet" href="/styles/main.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 </head>
@@ -25,16 +25,11 @@
     </header>
 
     <section class="product-details">
-        <p class="back-link"><a href="/index.html">← Back to Home</a></p>
-        <div class="product-image-container">
-            <img id="product-image" src="" alt="Product Image" class="product-image" loading="lazy">
-        </div>
-        <div class="product-info">
-            <h2 id="product-name"></h2>
-            <p id="product-price" class="price"></p>
-            <p id="product-description" class="description"></p>
-            <button class="add-to-cart" id="add-to-cart">Add to Cart</button>
-        </div>
+        <img id="product-image" alt="Product Image">
+        <h2 id="product-name"></h2>
+        <p id="product-price"></p>
+        <p id="product-description"></p>
+        <button id="add-to-cart" class="add-to-cart">Add to Cart</button>
     </section>
 
     <div id="shopping-cart" class="shopping-cart">
@@ -43,14 +38,28 @@
         <ul class="cart-items"></ul>
     </div>
 
+    <div id="chat-box" class="chat-box">
+        <button id="close-chat" class="close-chat">×</button>
+        <h3>Customer Support</h3>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input">
+            <textarea id="chat-input" placeholder="Type your message..."></textarea>
+            <button id="send-message">Send</button>
+        </div>
+    </div>
+    <button id="chat-button" class="chat-button">Chat with Us</button>
+
     <footer>
         <p>© 2025 Dummy Shopping Website</p>
     </footer>
 
     <script src="/cart.js"></script>
+    <script src="/chat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Handle CSRF token for logout
+            const urlParams = new URLSearchParams(window.location.search);
+            const pid = urlParams.get('pid');
+
             fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -94,7 +103,6 @@
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
-            // Handle user status
             fetch('/user', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -127,34 +135,32 @@
                 })
                 .catch(err => console.error('User fetch error:', err));
 
-            // Load product details
-            const urlParams = new URLSearchParams(window.location.search);
-            const pid = urlParams.get('pid');
             if (pid) {
                 fetch(`/product/${pid}`)
-                    .then(response => {
-                        if (!response.ok) throw new Error('Product fetch failed');
-                        return response.json();
-                    })
+                    .then(response => response.json())
                     .then(product => {
-                        document.getElementById('product-name').textContent = product.name;
+                        document.getElementById('product-name').textContent = DOMPurify.sanitize(product.name);
                         document.getElementById('product-price').textContent = `$${product.price}`;
-                        document.getElementById('product-description').textContent = product.description;
-                        document.getElementById('product-image').src = product.thumbnail || product.image || `/images/product${pid}.jpg`;
-                        document.getElementById('product-image').onerror = () => {
-                            console.error('Failed to load image:', product.thumbnail || product.image);
-                            document.getElementById('product-image').src = '/images/fallback.jpg';
+                        document.getElementById('product-description').textContent = DOMPurify.sanitize(product.description);
+                        const productImage = document.getElementById('product-image');
+                        productImage.src = product.image || `/images/product${pid}.jpg`;
+                        productImage.alt = product.name;
+                        productImage.onerror = () => {
+                            productImage.src = '/images/fallback.jpg';
+                            console.error(`Failed to load image: ${product.image}`);
                         };
-                        document.getElementById('add-to-cart').setAttribute('data-pid', pid);
+
+                        const addToCartButton = document.getElementById('add-to-cart');
+                        addToCartButton.setAttribute('data-pid', product.pid);
+                        addToCartButton.setAttribute('data-name', product.name);
+                        addToCartButton.setAttribute('data-price', product.price);
                     })
                     .catch(err => {
                         console.error('Product fetch error:', err);
-                        document.querySelector('.product-details').innerHTML = '<p>Error loading product</p>';
+                        document.querySelector('.product-details').innerHTML = '<p>Error loading product details.</p>';
                     });
-            } else {
-                document.querySelector('.product-details').innerHTML = '<p>No product specified</p>';
             }
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d206409f11b04c',t:'MTc0NjgwMjM4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

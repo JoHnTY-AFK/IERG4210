@@ -284,6 +284,89 @@ li:hover {
   text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
 }
 
+/* Admin Message Styles */
+#message-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+#message-list li {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 2px solid #00ffcc; /* Neon cyan border */
+  border-radius: 12px;
+  background: rgba(30, 30, 50, 0.9);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#message-list li:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+#message-list li p {
+  margin: 5px 0;
+  font-size: 1em;
+  color: #e0e0e0;
+}
+
+#message-list li p strong {
+  color: #00ffcc;
+  font-weight: 600;
+}
+
+#message-list li small {
+  color: #b0b0ff; /* Light purple for timestamps */
+  font-size: 0.85em;
+}
+
+.respond-form {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(40, 40, 60, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.respond-form textarea {
+  width: calc(100% - 24px);
+  padding: 12px;
+  border: 2px solid #00ffcc;
+  border-radius: 8px;
+  background: rgba(20, 20, 40, 0.8);
+  color: #e0e0e0;
+  font-size: 1em;
+  resize: vertical;
+  min-height: 80px;
+  margin-bottom: 10px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.respond-form textarea:focus {
+  border-color: #ff00ff;
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+  outline: none;
+}
+
+.respond-form button {
+  background: linear-gradient(45deg, #00ffcc, #ff00ff);
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: 600;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.respond-form button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   body {
@@ -336,6 +419,18 @@ li:hover {
 
   .admin-orders li p {
     font-size: 0.9em;
+  }
+
+  #message-list li {
+    padding: 15px;
+  }
+
+  .respond-form {
+    padding: 10px;
+  }
+
+  .respond-form textarea {
+    width: calc(100% - 20px);
   }
 }
 

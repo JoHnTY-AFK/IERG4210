@@ -54,10 +54,21 @@
          <h3>Shopping Cart</h3>
          <ul class="cart-items"></ul>
       </div>
+      <div id="chat-box" class="chat-box">
+         <button id="close-chat" class="close-chat">×</button>
+         <h3>Customer Support</h3>
+         <div id="chat-messages" class="chat-messages"></div>
+         <div class="chat-input">
+            <textarea id="chat-input" placeholder="Type your message..."></textarea>
+            <button id="send-message">Send</button>
+         </div>
+      </div>
+      <button id="chat-button" class="chat-button">Chat with Us</button>
       <footer>
          <p>© 2025 Dummy Shopping Website</p>
       </footer>
       <script src="/cart.js"></script>
+      <script src="/chat.js"></script>
       <script>
          document.addEventListener('DOMContentLoaded', () => {
              let currentPage = 1;
@@ -189,7 +200,7 @@
                  }
          
                  const url = catid ? `/products/${catid}?page=${currentPage}&limit=8` : `/products?page=${currentPage}&limit=8`;
-                 console.log(`Fetching products: ${url}`); // Debug log
+                 console.log(`Fetching products: ${url}`);
                  const startTime = Date.now();
                  fetch(url)
                      .then(response => {
@@ -200,7 +211,7 @@
                          return response.json();
                      })
                      .then(data => {
-                         console.log(`Received products for catid=${catid || 'all'}:`, data); // Debug log
+                         console.log(`Received products for catid=${catid || 'all'}:`, data);
                          const productList = document.getElementById('product-list');
                          const products = data.products;
                          hasMore = currentPage < data.pagination.totalPages;
@@ -236,7 +247,7 @@
                      })
                      .finally(() => {
                          const elapsed = Date.now() - startTime;
-                         const remainingTime = Math.max(0, 500 - elapsed); // Ensure loading indicator shows for at least 500ms
+                         const remainingTime = Math.max(0, 500 - elapsed);
                          setTimeout(() => {
                              isLoading = false;
                              if (hasMore) hideLoading();
@@ -247,7 +258,7 @@
              function handleScroll() {
                  const productList = document.getElementById('product-list');
                  const rect = productList.getBoundingClientRect();
-                 const isBottom = rect.bottom <= window.innerHeight + 100; // Trigger 100px before bottom
+                 const isBottom = rect.bottom <= window.innerHeight + 100;
                  if (isBottom && !isLoading && hasMore) {
                      loadProducts(currentCatid);
                  }
@@ -255,8 +266,8 @@
          
              document.getElementById('category-select').addEventListener('change', (e) => {
                  const newCatid = e.target.value;
-                 console.log(`Category selected: ${newCatid}`); // Debug log
-                 currentCatid = newCatid; // Update currentCatid
+                 console.log(`Category selected: ${newCatid}`);
+                 currentCatid = newCatid;
                  if (currentCatid) {
                      history.pushState({}, '', `?catid=${currentCatid}`);
                      loadProducts(currentCatid, true);
@@ -271,5 +282,5 @@
              window.addEventListener('scroll', handleScroll);
          });
       </script>
-   </body>
+   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d2063e4dc6bf64',t:'MTc0NjgwMjM4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
