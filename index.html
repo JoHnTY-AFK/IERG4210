@@ -188,8 +188,9 @@
                      document.getElementById('product-list').innerHTML = '<div class="loading" id="loading">Loading more products...</div>';
                  }
          
-                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=6` : `/products?page=${currentPage}&limit=6`;
+                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=4` : `/products?page=${currentPage}&limit=4`;
                  console.log(`Fetching products: ${url}`); // Debug log
+                 const startTime = Date.now();
                  fetch(url)
                      .then(response => {
                          if (!response.ok) {
@@ -234,8 +235,12 @@
                          document.getElementById('product-list').innerHTML = '<p>Error loading products</p>';
                      })
                      .finally(() => {
-                         isLoading = false;
-                         if (hasMore) hideLoading();
+                         const elapsed = Date.now() - startTime;
+                         const remainingTime = Math.max(0, 500 - elapsed); // Ensure loading indicator shows for at least 500ms
+                         setTimeout(() => {
+                             isLoading = false;
+                             if (hasMore) hideLoading();
+                         }, remainingTime);
                      });
              }
          

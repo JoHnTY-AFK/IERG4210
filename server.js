@@ -189,7 +189,7 @@ app.get('/categories', async (req, res) => {
 app.get('/products', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 12; // Default to 12 products per page
+        const limit = parseInt(req.query.limit) || 4; // Changed to 4 products per page
         const offset = (page - 1) * limit;
 
         // Validate pagination parameters
@@ -204,23 +204,27 @@ app.get('/products', async (req, res) => {
 
         // Get paginated products
         const [results] = await db.query('SELECT * FROM products LIMIT ? OFFSET ?', [limit, offset]);
-        res.json({
-            products: results.map(row => ({
-                pid: row.pid,
-                catid: row.catid,
-                name: escapeHtml(row.name),
-                price: row.price,
-                description: escapeHtml(row.description),
-                image: row.image,
-                thumbnail: row.thumbnail
-            })),
-            pagination: {
-                total,
-                page,
-                limit,
-                totalPages
-            }
-        });
+
+        // Simulate delay for observability (1 second)
+        setTimeout(() => {
+            res.json({
+                products: results.map(row => ({
+                    pid: row.pid,
+                    catid: row.catid,
+                    name: escapeHtml(row.name),
+                    price: row.price,
+                    description: escapeHtml(row.description),
+                    image: row.image,
+                    thumbnail: row.thumbnail
+                })),
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages
+                }
+            });
+        }, 1000); // 1000ms delay
     } catch (err) {
         console.error('Products error:', err);
         res.status(500).send('Internal Server Error');
@@ -231,7 +235,7 @@ app.get('/products/:catid', async (req, res) => {
     try {
         const catid = parseInt(req.params.catid);
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 12; // Default to 12 products per page
+        const limit = parseInt(req.query.limit) || 4; // Changed to 4 products per page
         const offset = (page - 1) * limit;
 
         // Validate inputs
@@ -246,23 +250,27 @@ app.get('/products/:catid', async (req, res) => {
 
         // Get paginated products
         const [results] = await db.query('SELECT * FROM products WHERE catid = ? LIMIT ? OFFSET ?', [catid, limit, offset]);
-        res.json({
-            products: results.map(row => ({
-                pid: row.pid,
-                catid: row.catid,
-                name: escapeHtml(row.name),
-                price: row.price,
-                description: escapeHtml(row.description),
-                image: row.image,
-                thumbnail: row.thumbnail
-            })),
-            pagination: {
-                total,
-                page,
-                limit,
-                totalPages
-            }
-        });
+
+        // Simulate delay for observability (1 second)
+        setTimeout(() => {
+            res.json({
+                products: results.map(row => ({
+                    pid: row.pid,
+                    catid: row.catid,
+                    name: escapeHtml(row.name),
+                    price: row.price,
+                    description: escapeHtml(row.description),
+                    image: row.image,
+                    thumbnail: row.thumbnail
+                })),
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages
+                }
+            });
+        }, 1000); // 1000ms delay
     } catch (err) {
         console.error('Products by catid error:', err);
         res.status(500).send('Internal Server Error');
