@@ -1,62 +1,63 @@
 /* General Styles */
 body {
-  font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Dark gradient background */
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  background: #1e1e2f; /* Dark neutral background */
   margin: 0;
   padding: 0;
-  color: #e6e6fa; /* Softer white for better readability */
+  color: #d3d3d3; /* Light gray text */
   overflow-x: hidden;
 }
 
-/* Main container */
-body {
-  max-width: 1200px;
-  margin: 40px auto;
-  padding: 40px;
-  background: rgba(30, 30, 50, 0.85); /* Semi-transparent dark container */
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); /* Cyan glow */
-  border-radius: 15px;
-  backdrop-filter: blur(10px); /* Frosted glass effect */
+/* Admin Panel Container */
+.admin-panel {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 30px;
+  background: #2a2a3d; /* Slightly lighter container */
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Subtle shadow */
 }
 
+/* Headings */
 h1 {
   text-align: center;
-  color: #00ffcc; /* Neon cyan for headings */
-  font-size: 2.8em;
-  margin-bottom: 30px;
-  font-family: 'Orbitron', sans-serif;
-  text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
+  color: #4a90e2; /* Soft blue for headings */
+  font-size: 2em;
+  margin-bottom: 20px;
 }
 
 h2 {
-  color: #00ffcc; /* Neon cyan for subheadings */
-  font-size: 2em;
-  margin-bottom: 20px;
-  font-family: 'Orbitron', sans-serif;
-  text-shadow: 0 0 8px rgba(0, 255, 204, 0.5);
+  color: #4a90e2; /* Soft blue for subheadings */
+  font-size: 1.5em;
+  margin-bottom: 15px;
+}
+
+h3 {
+  color: #4a90e2; /* Soft blue for subheadings */
+  font-size: 1.2em;
+  margin-bottom: 10px;
 }
 
 /* Form Styles */
 form {
-  margin-bottom: 40px;
-  padding: 30px;
-  background: rgba(40, 40, 60, 0.9); /* Darker form background */
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3); /* Neon glow */
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #33334d; /* Darker form background */
+  border-radius: 6px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
 }
 
 form:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+  transform: translateY(-2px);
 }
 
 form label {
   display: block;
-  margin-bottom: 10px;
-  font-weight: 600;
-  color: #b0b0ff; /* Light purple for labels */
-  font-size: 1.1em;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #a0a0c0; /* Light purple-gray for labels */
+  font-size: 1em;
 }
 
 form input[type="text"],
@@ -65,14 +66,14 @@ form input[type="password"],
 form textarea,
 form select {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 20px;
-  border: 2px solid #00ffcc; /* Neon cyan border */
-  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #4a90e2; /* Soft blue border */
+  border-radius: 4px;
   font-size: 1em;
-  background: rgba(20, 20, 40, 0.8); /* Dark input background */
-  color: #e6e6fa;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background: #1e1e2f; /* Matches body background */
+  color: #d3d3d3;
+  transition: border-color 0.2s ease;
 }
 
 form input[type="text"]:focus,
@@ -80,256 +81,168 @@ form input[type="number"]:focus,
 form input[type="password"]:focus,
 form textarea:focus,
 form select:focus {
-  border-color: #ff00ff; /* Neon magenta on focus */
-  box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+  border-color: #6b9eff; /* Lighter blue on focus */
   outline: none;
 }
 
 form textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 100px;
 }
 
 form input[type="file"] {
   padding: 8px;
-  background: rgba(20, 20, 40, 0.8);
-  color: #e6e6fa;
-  border: 2px solid #00ffcc;
-  border-radius: 8px;
+  background: #1e1e2f;
+  color: #d3d3d3;
+  border: 1px solid #4a90e2;
+  border-radius: 4px;
   width: 100%;
 }
 
 /* Error Message Styles */
 .error {
-  color: #ff4d4d; /* Bright red for errors */
-  font-size: 1em;
-  margin-bottom: 20px;
-  text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+  color: #e57373; /* Soft red for errors */
+  font-size: 0.95em;
+  margin-bottom: 15px;
   text-align: center;
 }
 
 /* Button Styles */
 button {
-  display: block;
-  width: 100%;
-  padding: 12px 25px;
-  font-size: 1.1em;
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 1em;
   font-weight: 600;
-  color: #1a1a2e; /* Dark text for contrast */
-  background: linear-gradient(45deg, #00ffcc, #ff00ff); /* Neon gradient */
+  color: #fff; /* White text */
+  background: #4a90e2; /* Soft blue */
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 button:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
+  background: #6b9eff; /* Lighter blue on hover */
+  transform: translateY(-1px);
 }
 
-/* Delete Button Styles */
-ul button {
-  background: linear-gradient(45deg, #ff4d4d, #b30000); /* Red gradient for delete */
-  padding: 8px 15px;
-  width: auto;
-  box-shadow: 0 0 8px rgba(255, 77, 77, 0.5);
+/* Edit and Delete Button Styles */
+.edit-product,
+.edit-category {
+  background: #4a90e2; /* Soft blue for edit */
+  padding: 6px 12px;
+  margin: 5px;
+  box-shadow: none;
 }
 
-ul button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px rgba(255, 77, 77, 0.7);
+.edit-product:hover,
+.edit-category:hover {
+  background: #6b9eff; /* Lighter blue on hover */
 }
 
-/* Product List Styles */
-#product-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  padding: 20px 0;
+.delete-product,
+.delete-category {
+  background: #e57373; /* Soft red for delete */
+  padding: 6px 12px;
+  margin: 5px;
+  box-shadow: none;
 }
 
-#product-list li {
-  background: rgba(40, 40, 60, 0.9);
-  border: 2px solid #00ffcc;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.delete-product:hover,
+.delete-category:hover {
+  background: #ef9a9a; /* Lighter red on hover */
 }
 
-#product-list li:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-}
-
-#product-list li img {
-  max-width: 100%;
-  max-height: 150px;
-  border-radius: 10px;
-  margin-bottom: 15px;
-  object-fit: cover;
-}
-
-#product-list li h3 {
-  margin: 10px 0;
-  font-size: 1.2em;
-  font-weight: 600;
-  color: #e6e6fa;
-}
-
-#product-list li p {
-  font-size: 1.1em;
-  color: #00ffcc;
-  margin-bottom: 15px;
-}
-
-/* View Button Styles */
-#product-list a.view-button {
-  display: inline-block;
-  padding: 8px 15px;
-  font-size: 1em;
-  font-weight: 600;
-  color: #1a1a2e;
-  background: linear-gradient(45deg, #00ffcc, #007bff);
-  border-radius: 8px;
-  text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-}
-
-#product-list a.view-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px rgba(0, 123, 255, 0.7);
-}
-
-/* List Styles (for Orders and Messages) */
-#order-list, #message-list {
+/* List Styles */
+#product-list,
+#category-list,
+#order-list,
+#message-list {
   list-style-type: none;
   padding: 0;
 }
 
-#order-list li, #message-list li {
-  margin: 15px 0;
-  padding: 20px;
-  border: 2px solid #ff00ff; /* Neon magenta border */
-  border-radius: 10px;
-  background: rgba(30, 30, 50, 0.9);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+#product-list li,
+#category-list li,
+#order-list li,
+#message-list li {
+  margin: 10px 0;
+  padding: 15px;
+  border: 1px solid #4a90e2; /* Soft blue border */
+  border-radius: 4px;
+  background: #33334d; /* Darker list item background */
+  transition: transform 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-#order-list li:hover, #message-list li:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+#product-list li:hover,
+#category-list li:hover,
+#order-list li:hover,
+#message-list li:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
-#order-list li p, #message-list li p {
-  margin: 8px 0;
+/* Orders Nested List Styles */
+#order-list li ul {
+  list-style-type: none;
+  padding: 10px 0 0 20px;
+  margin: 10px 0 0 0;
+}
+
+#order-list li ul li {
+  margin: 5px 0;
+  padding: 5px;
+  border: 1px solid #4a90e2; /* Soft blue border */
+  border-radius: 4px;
+  background: #2a2a3d; /* Lighter background for nested items */
+  font-size: 0.9em;
+}
+
+/* Messages List Styles */
+#message-list li p {
+  margin: 5px 0;
   font-size: 1em;
-  color: #e6e6fa;
+  color: #d3d3d3;
 }
 
-#order-list li p strong, #message-list li p strong {
-  color: #00ffcc;
+#message-list li p strong {
+  color: #4a90e2;
   font-weight: 600;
 }
 
-/* Admin Back Link */
-.admin-back-link {
-  text-align: center;
-  margin: -10px 0 30px 0;
-}
-
-.admin-back-link a {
-  display: inline-block;
-  padding: 12px 25px;
-  background: linear-gradient(45deg, #007bff, #00ffcc);
-  color: #1a1a2e;
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 1.1em;
-  font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
-}
-
-.admin-back-link a:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
-}
-
-/* Admin Orders Section */
-.admin-orders {
-  margin-top: 40px;
-  padding: 30px;
-  background: rgba(40, 40, 60, 0.9);
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-  transition: transform 0.3s ease;
-}
-
-.admin-orders:hover {
-  transform: translateY(-5px);
-}
-
-.admin-orders h2 {
-  font-size: 2em;
-  color: #00ffcc;
-  margin-bottom: 20px;
-  text-align: center;
-  text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
-}
-
-.admin-orders .status-pending {
-  color: #f0ad4e;
-  font-weight: 600;
-  text-shadow: 0 0 5px rgba(240, 173, 78, 0.5);
-}
-
-.admin-orders .status-completed {
-  color: #00ffcc;
-  font-weight: 600;
-  text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
-}
-
-.admin-orders .status-failed {
-  color: #ff4d4d;
-  font-weight: 600;
-  text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
-}
-
-/* Admin Message Styles */
 #message-list li small {
-  color: #b0b0ff;
+  color: #a0a0c0;
   font-size: 0.85em;
 }
 
+/* Respond Form Styles */
 .respond-form {
   margin-top: 15px;
   padding: 15px;
-  background: rgba(40, 40, 60, 0.9);
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  background: #33334d;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
 .respond-form textarea {
   width: 100%;
-  padding: 12px;
-  border: 2px solid #00ffcc;
-  border-radius: 8px;
-  background: rgba(20, 20, 40, 0.8);
-  color: #e6e6fa;
+  padding: 10px;
+  border: 1px solid #4a90e2;
+  border-radius: 4px;
+  background: #1e1e2f;
+  color: #d3d3d3;
   font-size: 1em;
   resize: vertical;
   min-height: 80px;
   margin-bottom: 10px;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.2s ease;
 }
 
 .respond-form textarea:focus {
-  border-color: #ff00ff;
-  box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+  border-color: #6b9eff;
   outline: none;
 }
 
@@ -339,73 +252,72 @@ ul button:hover {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  body {
-    padding: 20px;
-    margin: 20px;
+  .admin-panel {
+    padding: 15px;
+    margin: 10px;
   }
 
   h1 {
-    font-size: 2.2em;
+    font-size: 1.5em;
   }
 
   h2 {
-    font-size: 1.6em;
+    font-size: 1.2em;
+  }
+
+  h3 {
+    font-size: 1em;
   }
 
   form {
-    padding: 20px;
+    padding: 15px;
   }
 
   form input[type="text"],
   form input[type="number"],
   form input[type="password"],
   form textarea,
-  form select {
-    width: 100%;
-  }
-
+  form select,
   form input[type="file"] {
     width: 100%;
   }
 
   button {
+    width: 100%;
     padding: 10px;
   }
 
-  #product-list {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  #product-list li,
+  #category-list li,
+  #order-list li,
+  #message-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 
-  .admin-orders {
-    padding: 20px;
+  .edit-product,
+  .edit-category,
+  .delete-product,
+  .delete-category {
+    width: 100%;
+    margin: 5px 0;
   }
 
-  .admin-orders h2 {
-    font-size: 1.6em;
-  }
-
-  #order-list li, #message-list li {
-    padding: 15px;
-  }
-
-  #order-list li p, #message-list li p {
-    font-size: 0.9em;
-  }
-
-  .respond-form {
-    padding: 10px;
+  #order-list li ul li {
+    font-size: 0.85em;
   }
 }
 
 /* Animations */
-form, .admin-orders, li {
-  animation: fadeIn 0.6s ease-in-out;
+form, li {
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
