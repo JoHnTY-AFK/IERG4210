@@ -1,43 +1,45 @@
 /* General Styles */
 body {
-  font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); /* Dark gradient background */
   margin: 0;
   padding: 0;
-  color: #e0e0e0; /* Light text for contrast */
+  color: #e6e6fa; /* Softer white for better readability */
   overflow-x: hidden;
 }
 
 /* Main container */
 body {
-  max-width: 900px;
-  margin: 30px auto;
-  padding: 30px;
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 40px;
   background: rgba(30, 30, 50, 0.85); /* Semi-transparent dark container */
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); /* Cyan glow */
-  border-radius: 12px;
+  border-radius: 15px;
   backdrop-filter: blur(10px); /* Frosted glass effect */
 }
 
 h1 {
   text-align: center;
   color: #00ffcc; /* Neon cyan for headings */
-  font-size: 2.5em;
-  margin-bottom: 20px;
+  font-size: 2.8em;
+  margin-bottom: 30px;
+  font-family: 'Orbitron', sans-serif;
   text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
 }
 
 h2 {
   color: #00ffcc; /* Neon cyan for subheadings */
-  font-size: 1.8em;
-  margin-bottom: 15px;
+  font-size: 2em;
+  margin-bottom: 20px;
+  font-family: 'Orbitron', sans-serif;
   text-shadow: 0 0 8px rgba(0, 255, 204, 0.5);
 }
 
 /* Form Styles */
 form {
-  margin-bottom: 30px;
-  padding: 25px;
+  margin-bottom: 40px;
+  padding: 30px;
   background: rgba(40, 40, 60, 0.9); /* Darker form background */
   border-radius: 12px;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.3); /* Neon glow */
@@ -52,9 +54,9 @@ form:hover {
 form label {
   display: block;
   margin-bottom: 10px;
-  font-weight: 500;
+  font-weight: 600;
   color: #b0b0ff; /* Light purple for labels */
-  font-size: 1em;
+  font-size: 1.1em;
 }
 
 form input[type="text"],
@@ -62,18 +64,14 @@ form input[type="number"],
 form input[type="password"],
 form textarea,
 form select {
-  width: calc(100% - 40px); /* Adjusted width with padding to prevent touching edges */
-  max-width: 500px; /* Max width to keep inputs centered */
+  width: 100%;
   padding: 12px;
   margin-bottom: 20px;
-  margin-left: auto;
-  margin-right: auto;
-  display: block; /* Ensure centering works */
   border: 2px solid #00ffcc; /* Neon cyan border */
   border-radius: 8px;
   font-size: 1em;
   background: rgba(20, 20, 40, 0.8); /* Dark input background */
-  color: #e0e0e0; /* Light text */
+  color: #e6e6fa;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -95,30 +93,27 @@ form textarea {
 form input[type="file"] {
   padding: 8px;
   background: rgba(20, 20, 40, 0.8);
-  color: #e0e0e0;
+  color: #e6e6fa;
   border: 2px solid #00ffcc;
   border-radius: 8px;
-  width: calc(100% - 40px); /* Match other inputs */
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
+  width: 100%;
 }
 
 /* Error Message Styles */
 .error {
   color: #ff4d4d; /* Bright red for errors */
-  font-size: 0.95em;
+  font-size: 1em;
   margin-bottom: 20px;
   text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
-  text-align: center; /* Center error messages */
+  text-align: center;
 }
 
 /* Button Styles */
 button {
-  display: inline-block;
+  display: block;
+  width: 100%;
   padding: 12px 25px;
-  font-size: 1em;
+  font-size: 1.1em;
   font-weight: 600;
   color: #1a1a2e; /* Dark text for contrast */
   background: linear-gradient(45deg, #00ffcc, #ff00ff); /* Neon gradient */
@@ -130,7 +125,7 @@ button {
 }
 
 button:hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
   box-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
 }
 
@@ -138,6 +133,7 @@ button:hover {
 ul button {
   background: linear-gradient(45deg, #ff4d4d, #b30000); /* Red gradient for delete */
   padding: 8px 15px;
+  width: auto;
   box-shadow: 0 0 8px rgba(255, 77, 77, 0.5);
 }
 
@@ -146,62 +142,113 @@ ul button:hover {
   box-shadow: 0 0 15px rgba(255, 77, 77, 0.7);
 }
 
+/* Product List Styles */
+#product-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+#product-list li {
+  background: rgba(40, 40, 60, 0.9);
+  border: 2px solid #00ffcc;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#product-list li:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+#product-list li img {
+  max-width: 100%;
+  max-height: 150px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  object-fit: cover;
+}
+
+#product-list li h3 {
+  margin: 10px 0;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #e6e6fa;
+}
+
+#product-list li p {
+  font-size: 1.1em;
+  color: #00ffcc;
+  margin-bottom: 15px;
+}
+
 /* View Button Styles */
-ul a {
+#product-list a.view-button {
   display: inline-block;
   padding: 8px 15px;
-  font-size: 0.9em;
+  font-size: 1em;
   font-weight: 600;
-  color: #1a1a2e; /* Dark text for contrast */
-  background: linear-gradient(45deg, #00ffcc, #007bff); /* Cyan to blue gradient */
+  color: #1a1a2e;
+  background: linear-gradient(45deg, #00ffcc, #007bff);
   border-radius: 8px;
   text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.3s ease;
   box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
 }
 
-ul a:hover {
+#product-list a.view-button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(0, 123, 255, 0.7);
 }
 
-/* List Styles */
-ul {
+/* List Styles (for Orders and Messages) */
+#order-list, #message-list {
   list-style-type: none;
   padding: 0;
 }
 
-li {
+#order-list li, #message-list li {
   margin: 15px 0;
-  padding: 15px;
-  border: 2px solid #00ffcc; /* Neon cyan border */
+  padding: 20px;
+  border: 2px solid #ff00ff; /* Neon magenta border */
   border-radius: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(30, 30, 50, 0.9); /* Dark list item background */
+  background: rgba(30, 30, 50, 0.9);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-li:hover {
+#order-list li:hover, #message-list li:hover {
   transform: translateY(-3px);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+}
+
+#order-list li p, #message-list li p {
+  margin: 8px 0;
+  font-size: 1em;
+  color: #e6e6fa;
+}
+
+#order-list li p strong, #message-list li p strong {
+  color: #00ffcc;
+  font-weight: 600;
 }
 
 /* Admin Back Link */
 .admin-back-link {
   text-align: center;
-  margin: -10px 0 25px 0;
+  margin: -10px 0 30px 0;
 }
 
 .admin-back-link a {
   display: inline-block;
   padding: 12px 25px;
-  background: linear-gradient(45deg, #007bff, #00ffcc); /* Blue to cyan gradient */
+  background: linear-gradient(45deg, #007bff, #00ffcc);
   color: #1a1a2e;
   text-decoration: none;
   border-radius: 8px;
-  font-size: 1em;
+  font-size: 1.1em;
   font-weight: 600;
   transition: transform 0.2s ease, box-shadow 0.3s ease;
   box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
@@ -210,14 +257,13 @@ li:hover {
 .admin-back-link a:hover {
   transform: translateY(-3px);
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
-  text-decoration: none;
 }
 
 /* Admin Orders Section */
 .admin-orders {
-  margin-top: 30px;
-  padding: 25px;
-  background: rgba(40, 40, 60, 0.9); /* Darker background */
+  margin-top: 40px;
+  padding: 30px;
+  background: rgba(40, 40, 60, 0.9);
   border-radius: 12px;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
   transition: transform 0.3s ease;
@@ -235,89 +281,27 @@ li:hover {
   text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
 }
 
-.admin-orders ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.admin-orders li {
-  border: 2px solid #ff00ff; /* Neon magenta border */
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 15px;
-  background: rgba(30, 30, 50, 0.9);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.admin-orders li:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
-}
-
-.admin-orders li p {
-  margin: 8px 0;
-  font-size: 1em;
-  color: #e0e0e0;
-}
-
-.admin-orders li p strong {
-  color: #00ffcc;
-  font-weight: 600;
-}
-
 .admin-orders .status-pending {
-  color: #f0ad4e; /* Orange for pending */
+  color: #f0ad4e;
   font-weight: 600;
   text-shadow: 0 0 5px rgba(240, 173, 78, 0.5);
 }
 
 .admin-orders .status-completed {
-  color: #00ffcc; /* Cyan for completed */
+  color: #00ffcc;
   font-weight: 600;
   text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
 }
 
 .admin-orders .status-failed {
-  color: #ff4d4d; /* Red for failed */
+  color: #ff4d4d;
   font-weight: 600;
   text-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
 }
 
 /* Admin Message Styles */
-#message-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 20px;
-}
-
-#message-list li {
-  margin-bottom: 20px;
-  padding: 20px;
-  border: 2px solid #00ffcc; /* Neon cyan border */
-  border-radius: 12px;
-  background: rgba(30, 30, 50, 0.9);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-#message-list li:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-}
-
-#message-list li p {
-  margin: 5px 0;
-  font-size: 1em;
-  color: #e0e0e0;
-}
-
-#message-list li p strong {
-  color: #00ffcc;
-  font-weight: 600;
-}
-
 #message-list li small {
-  color: #b0b0ff; /* Light purple for timestamps */
+  color: #b0b0ff;
   font-size: 0.85em;
 }
 
@@ -330,12 +314,12 @@ li:hover {
 }
 
 .respond-form textarea {
-  width: calc(100% - 24px);
+  width: 100%;
   padding: 12px;
   border: 2px solid #00ffcc;
   border-radius: 8px;
   background: rgba(20, 20, 40, 0.8);
-  color: #e0e0e0;
+  color: #e6e6fa;
   font-size: 1em;
   resize: vertical;
   min-height: 80px;
@@ -350,21 +334,7 @@ li:hover {
 }
 
 .respond-form button {
-  background: linear-gradient(45deg, #00ffcc, #ff00ff);
-  padding: 10px 20px;
-  font-size: 1em;
-  font-weight: 600;
-  color: #1a1a2e;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-}
-
-.respond-form button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
+  width: 100%;
 }
 
 /* Responsive Design */
@@ -375,11 +345,11 @@ li:hover {
   }
 
   h1 {
-    font-size: 2em;
+    font-size: 2.2em;
   }
 
   h2 {
-    font-size: 1.5em;
+    font-size: 1.6em;
   }
 
   form {
@@ -391,18 +361,19 @@ li:hover {
   form input[type="password"],
   form textarea,
   form select {
-    width: calc(100% - 20px); /* Slightly smaller padding for smaller screens */
-    max-width: none; /* Remove max-width on smaller screens */
+    width: 100%;
   }
 
   form input[type="file"] {
-    width: calc(100% - 20px);
-    max-width: none;
+    width: 100%;
   }
 
   button {
-    width: 100%;
-    padding: 14px;
+    padding: 10px;
+  }
+
+  #product-list {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 
   .admin-orders {
@@ -413,24 +384,16 @@ li:hover {
     font-size: 1.6em;
   }
 
-  .admin-orders li {
+  #order-list li, #message-list li {
     padding: 15px;
   }
 
-  .admin-orders li p {
+  #order-list li p, #message-list li p {
     font-size: 0.9em;
-  }
-
-  #message-list li {
-    padding: 15px;
   }
 
   .respond-form {
     padding: 10px;
-  }
-
-  .respond-form textarea {
-    width: calc(100% - 20px);
   }
 }
 

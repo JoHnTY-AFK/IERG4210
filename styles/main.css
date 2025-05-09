@@ -737,10 +737,10 @@ footer p {
   background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
   color: var(--text-color);
   border: none;
-  padding: 15px;
-  border-radius: 50%;
+  padding: 10px 20px;
+  border-radius: 25px;
   cursor: pointer;
-  box-shadow: 0 4px 15px var(--glow-color);
+  box-shadow: 0 0 10px var(--glow-color);
   z-index: 1000;
   font-size: 1em;
   font-family: 'Orbitron', sans-serif;
@@ -749,8 +749,8 @@ footer p {
 }
 
 .chat-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px var(--glow-color);
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--glow-color);
 }
 
 .chat-box {
@@ -974,7 +974,7 @@ footer p {
   .chat-button {
     bottom: 15px;
     right: 15px;
-    padding: 12px;
+    padding: 8px 16px;
   }
 }
 
@@ -1015,6 +1015,6 @@ footer p {
   .chat-button {
     bottom: 10px;
     right: 10px;
-    padding: 10px;
+    padding: 6px 12px;
   }
 }
