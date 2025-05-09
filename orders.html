@@ -136,8 +136,7 @@
 
             const fetchOrders = async (page) => {
                 try {
-                    // Temporarily remove the page parameter to test the base endpoint
-                    const response = await fetch(`/orders-data`, { credentials: 'include' });
+                    const response = await fetch(`/orders-data?page=${page}`, { credentials: 'include' });
                     if (!response.ok) {
                         if (response.status === 401) {
                             window.location.href = '/login';
@@ -145,7 +144,7 @@
                         throw new Error(`Failed to fetch orders: ${response.statusText}`);
                     }
                     const data = await response.json();
-                    console.log('API Response:', data); // Debug: Log the response
+                    console.log('API Response:', data); // Debug log
 
                     const orderList = document.getElementById('order-list');
                     orderList.innerHTML = '';
@@ -153,10 +152,9 @@
                     let orders = [];
                     let total = 0;
 
-                    // Handle different response formats
                     if (Array.isArray(data)) {
                         orders = data;
-                        total = data.length; // Fallback: assume total is the length of the array
+                        total = data.length; // Fallback if total isn't provided
                     } else if (data.orders && typeof data.total === 'number') {
                         orders = data.orders;
                         total = data.total;
@@ -192,7 +190,7 @@
                     
                     pageInfo.textContent = `Page ${page} of ${totalPages}`;
                     prevButton.disabled = page === 1;
-                    nextButton.disabled = page === totalPages;
+                    nextButton.disabled = page === totalPages || totalPages === 1;
                 } catch (err) {
                     console.error('Orders fetch error:', err);
                     document.getElementById('order-list').innerHTML = '<li>Error loading orders: ' + err.message + '</li>';
