@@ -649,6 +649,7 @@ header nav ul li a:hover {
 }
 
 /* Orders Page */
+/* Orders Page */
 .orders {
   max-width: 1000px;
   margin: 30px auto;
@@ -666,6 +667,11 @@ header nav ul li a:hover {
   color: var(--text-color);
   margin-bottom: 20px;
   text-align: center;
+  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 5px var(--glow-color);
 }
 
 .orders ul {
@@ -674,43 +680,86 @@ header nav ul li a:hover {
   margin: 0;
 }
 
-.orders li {
+.orders li.order-item {
   border: 1px solid var(--card-border);
   border-radius: 10px;
-  padding: 15px;
+  padding: 20px;
   margin-bottom: 15px;
   background: rgba(255, 255, 255, 0.05);
   transition: var(--transition);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
-.orders li:hover {
+.orders li.order-item:hover {
   box-shadow: 0 4px 15px var(--glow-color);
+  transform: translateY(-2px);
+}
+
+/* Status-based styling for the entire order item */
+.orders li.order-item.status-completed {
+  background: rgba(0, 212, 255, 0.1); /* Light blue for success */
+  border-color: var(--accent-color);
+}
+
+.orders li.order-item.status-pending {
+  background: rgba(240, 173, 78, 0.1); /* Orange for pending */
+  border-color: #f0ad4e;
+}
+
+.orders li.order-item.status-failed {
+  background: rgba(255, 75, 43, 0.1); /* Red for failed */
+  border-color: #FF4B2B;
 }
 
 .orders li p {
   margin: 5px 0;
-  font-size: 0.95em;
+  font-size: 1em;
   color: var(--text-color);
+  flex: 1 1 45%;
 }
 
 .orders li p strong {
-  color: var(--text-color);
+  color: var(--highlight-color);
   font-weight: 600;
 }
 
 .orders .status-pending {
   color: #f0ad4e;
   font-weight: 600;
+  text-shadow: 0 0 5px rgba(240, 173, 78, 0.5);
 }
 
 .orders .status-completed {
   color: var(--accent-color);
   font-weight: 600;
+  text-shadow: 0 0 5px var(--glow-color);
 }
 
 .orders .status-failed {
   color: #FF4B2B;
   font-weight: 600;
+  text-shadow: 0 0 5px rgba(255, 75, 43, 0.5);
+}
+
+/* Styling for nested order items */
+.orders li ul.order-items {
+  list-style: none;
+  padding: 10px;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.orders li ul.order-items li {
+  font-size: 0.95em;
+  color: var(--text-color);
+  padding: 5px 0;
+  border: none;
+  background: none;
+  margin: 0;
 }
 
 /* Responsive Design */
@@ -724,15 +773,17 @@ header nav ul li a:hover {
     font-size: 1.5em;
   }
 
-  .orders ul {
-    grid-template-columns: 1fr;
-  }
-
-  .orders li {
+  .orders li.order-item {
     padding: 15px;
+    flex-direction: column;
   }
 
   .orders li p {
+    font-size: 0.9em;
+    flex: 1 1 100%;
+  }
+
+  .orders li ul.order-items li {
     font-size: 0.9em;
   }
 }
@@ -747,7 +798,7 @@ header nav ul li a:hover {
     font-size: 1.2em;
   }
 
-  .orders li {
+  .orders li.order-item {
     padding: 10px;
   }
 }

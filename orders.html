@@ -25,8 +25,13 @@
     </header>
 
     <section class="orders">
-        <h2>My Recent Orders (Last 5)</h2>
+        <h2>My Recent Orders</h2>
         <ul id="order-list"></ul>
+        <div class="pagination">
+            <button id="prev-page" disabled>Previous</button>
+            <span id="page-info">Page 1</span>
+            <button id="next-page">Next</button>
+        </div>
     </section>
 
     <div id="shopping-cart" class="shopping-cart">
@@ -54,6 +59,10 @@
     <script src="/chat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            let currentPage = 1;
+            let totalPages = 1;
+            const ordersPerPage = 5;
+
             fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -125,41 +134,70 @@
                     window.location.href = '/login';
                 });
 
-            fetch('/orders-data', { credentials: 'include' })
-                .then(response => {
+            const fetchOrders = async (page) => {
+                try {
+                    const response = await fetch(`/orders-data?page=${page}`, { credentials: 'include' });
                     if (!response.ok) {
                         if (response.status === 401) {
                             window.location.href = '/login';
                         }
                         throw new Error('Failed to fetch orders');
                     }
-                    return response.json();
-                })
-                .then(orders => {
+                    const data = await response.json();
                     const orderList = document.getElementById('order-list');
-                    if (orders.length === 0) {
+                    orderList.innerHTML = '';
+
+                    if (!data.orders || data.orders.length === 0) {
                         orderList.innerHTML = '<li>No recent orders found.</li>';
-                        return;
+                        totalPages = 1;
+                    } else {
+                        data.orders.forEach(order => {
+                            const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
+                            const itemList = items.map(item => `<li>${DOMPurify.sanitize(item.name || 'Unknown')} (Qty: ${item.quantity}, Price: $${item.price})</li>`).join('');
+                            const orderItem = document.createElement('li');
+                            orderItem.className = `order-item status-${order.status.toLowerCase()}`;
+                            orderItem.innerHTML = DOMPurify.sanitize(`
+                                <p><strong>Order ID:</strong> ${order.order_id}</p>
+                                <p><strong>Total:</strong> $${order.total_amount}</p>
+                                <p><strong>Status:</strong> <span class="status-${order.status.toLowerCase()}">${order.status}</span></p>
+                                <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                                <ul class="order-items">${itemList}</ul>
+                            `);
+                            orderList.appendChild(orderItem);
+                        });
+
+                        totalPages = Math.ceil(data.total / ordersPerPage);
                     }
-                    orders.forEach(order => {
-                        const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
-                        const itemList = items.map(item => `<li>${DOMPurify.sanitize(item.name || 'Unknown')} (Qty: ${item.quantity}, Price: $${item.price})</li>`).join('');
-                        const orderItem = document.createElement('li');
-                        orderItem.innerHTML = DOMPurify.sanitize(`
-                            <p>Order ID: ${order.order_id}</p>
-                            <p>Total: $${order.total_amount}</p>
-                            <p>Status: ${order.status}</p>
-                            <p>Date: ${new Date(order.created_at).toLocaleString()}</p>
-                            <ul>${itemList}</ul>
-                        `);
-                        orderList.appendChild(orderItem);
-                    });
-                })
-                .catch(err => {
+
+                    const prevButton = document.getElementById('prev-page');
+                    const nextButton = document.getElementById('next-page');
+                    const pageInfo = document.getElementById('page-info');
+                    
+                    pageInfo.textContent = `Page ${page} of ${totalPages}`;
+                    prevButton.disabled = page === 1;
+                    nextButton.disabled = page === totalPages;
+                } catch (err) {
                     console.error('Orders fetch error:', err);
                     document.getElementById('order-list').innerHTML = '<li>Error loading orders.</li>';
-                });
+                }
+            };
+
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchOrders(currentPage);
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    fetchOrders(currentPage);
+                }
+            });
+
+            fetchOrders(currentPage);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d206409f11b04c',t:'MTc0NjgwMjM4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d206409f11b04c',t:'MTc0NjgwMjM4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d2bde8fbb6b0dc',t:'MTc0NjgwOTkwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
