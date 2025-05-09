@@ -12,12 +12,24 @@ const sanitizeHtml = require('sanitize-html');
 const http = require('http');
 const fetch = require('node-fetch');
 const dotenv = require('dotenv');
+const AlipaySDK = require('alipay-sdk').default;
+const AlipayFormData = require('alipay-sdk/lib/form').default;
+
 dotenv.config();
 
 const fs = require('fs');
 
 const app = express();
 const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
+
+// Initialize Alipay SDK
+const alipaySdk = new AlipaySDK({
+    appId: process.env.ALIPAY_APP_ID,
+    privateKey: process.env.ALIPAY_PRIVATE_KEY,
+    alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY,
+    gateway: process.env.ALIPAY_GATEWAY,
+    signType: 'RSA2'
+});
 
 const db = mysql.createPool({
     host: process.env.DB_HOST || 'ierg4210.mysql.database.azure.com',
@@ -57,14 +69,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-// Serve static files (Nginx should handle /images/ and /uploads/ for optimal performance)
+// Serve static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/images', express.static(path.join(__dirname, 'images'), {
     setHeaders: (res) => {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     setHeaders: (res) => {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
@@ -275,11 +287,7 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
         const [orders] = await db.query('SELECT * FROM orders ORDER BY created_at DESC');
         res.json(orders.map(order => ({
             order_id: order.orderID,
-            email:
-
-
-
-            order.user_email,
+            email: order.user_email,
             total_amount: order.total_price,
             items: order.items,
             status: order.status,
@@ -409,10 +417,10 @@ app.post('/change-password', validateCsrfToken, authenticate, async (req, res) =
 app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) => {
     try {
         console.log('Validate-order request body:', req.body);
-        const { items } = req.body;
-        if (!items || !Array.isArray(items)) {
-            console.log('Invalid items detected');
-            return res.status(400).json({ error: 'Invalid items' });
+        const { items, payment_provider } = req.body;
+        if (!items || !Array.isArray(items) || !['paypal', 'alipay'].includes(payment_provider)) {
+            console.log('Invalid items or payment provider detected');
+            return res.status(400).json({ error: 'Invalid items or payment provider' });
         }
 
         const connection = await db.getConnection();
@@ -459,8 +467,8 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
             const userEmail = req.user ? req.user.email : null;
             console.log('User email:', userEmail);
             const [result] = await connection.query(
-                'INSERT INTO orders (user_email, items, total_price, digest, salt, status) VALUES (?, ?, ?, ?, ?, ?)',
-                [userEmail, JSON.stringify(orderItems), totalPrice, digest, salt, 'pending']
+                'INSERT INTO orders (user_email, items, total_price, digest, salt, status, payment_provider) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [userEmail, JSON.stringify(orderItems), totalPrice, digest, salt, 'pending', payment_provider]
             );
             console.log('Order inserted, ID:', result.insertId);
 
@@ -474,6 +482,137 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
     } catch (err) {
         console.error('Connection error:', err);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/alipay-create-payment', validateCsrfToken, async (req, res) => {
+    try {
+        const { orderID, digest, item_name_1 } = req.body;
+        if (!orderID || !digest || !item_name_1) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const [orders] = await db.query('SELECT * FROM orders WHERE orderID = ? AND payment_provider = ?', [orderID, 'alipay']);
+        if (orders.length === 0) {
+            return res.status(400).json({ error: 'Order not found or invalid payment provider' });
+        }
+
+        const order = orders[0];
+        const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+
+        // Verify digest
+        const currency = 'USD';
+        const merchantEmail = 'testing6070@example.com';
+        const salt = order.salt;
+        const dataToHash = [
+            currency,
+            merchantEmail,
+            salt,
+            ...orderItems.map(item => `${item.pid}:${item.quantity}:${item.price}`)
+        ].join('|');
+        const regeneratedDigest = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+        if (regeneratedDigest !== digest) {
+            return res.status(400).json({ error: 'Digest validation failed' });
+        }
+
+        // Create Alipay payment
+        const form = new AlipayFormData();
+        form.setMethod('get');
+        form.addField('notifyUrl', process.env.ALIPAY_NOTIFY_URL);
+        form.addField('returnUrl', process.env.ALIPAY_RETURN_URL);
+        form.addField('bizContent', JSON.stringify({
+            out_trade_no: orderID.toString(),
+            product_code: 'FAST_INSTANT_TRADE_PAY',
+            total_amount: order.total_price.toFixed(2),
+            subject: `Order #${orderID} from Dummy Shopping Website`,
+            body: `Purchase of ${orderItems.length} items`
+        }));
+
+        const result = await alipaySdk.exec('alipay.trade.page.pay', {}, { formData: form });
+        res.redirect(result);
+    } catch (err) {
+        console.error('Alipay payment creation error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/alipay-webhook', async (req, res) => {
+    try {
+        console.log('Alipay webhook received:', req.body);
+
+        // Verify Alipay signature
+        const signVerified = alipaySdk.signVerify(req.body);
+        if (!signVerified) {
+            console.error('Alipay signature verification failed');
+            return res.status(400).send('Invalid Alipay notification');
+        }
+
+        const { out_trade_no, trade_no, trade_status, total_amount, buyer_logon_id } = req.body;
+        if (trade_status !== 'TRADE_SUCCESS' && trade_status !== 'TRADE_FINISHED') {
+            console.log('Alipay transaction not completed:', trade_status);
+            return res.status(200).send('OK');
+        }
+
+        // Check if transaction already processed
+        const [existing] = await db.query('SELECT transaction_id FROM transactions WHERE transaction_id_external = ?', [trade_no]);
+        if (existing.length > 0) {
+            console.warn('Transaction already processed:', trade_no);
+            return res.status(200).send('OK');
+        }
+
+        // Fetch order
+        const orderID = parseInt(out_trade_no);
+        const [orders] = await db.query('SELECT * FROM orders WHERE orderID = ? AND payment_provider = ?', [orderID, 'alipay']);
+        if (orders.length === 0) {
+            console.error('Order not found:', orderID);
+            return res.status(400).send('Order not found');
+        }
+
+        const order = orders[0];
+        const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+
+        // Verify digest
+        const currency = 'USD';
+        const merchantEmail = 'testing6070@example.com';
+        const salt = order.salt;
+        const dataToHash = [
+            currency,
+            merchantEmail,
+            salt,
+            ...orderItems.map(item => `${item.pid}:${item.quantity}:${item.price}`)
+        ].join('|');
+        const regeneratedDigest = crypto.createHash('sha256').update(dataToHash).digest('hex');
+
+        if (regeneratedDigest !== order.digest) {
+            console.error('Digest mismatch:', regeneratedDigest, order.digest);
+            return res.status(400).send('Digest validation failed');
+        }
+
+        // Save transaction
+        await db.query(
+            'INSERT INTO transactions (orderID, payment_provider, transaction_id_external, payment_status, payment_amount, currency_code, payer_email, items, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                orderID,
+                'alipay',
+                trade_no,
+                trade_status,
+                parseFloat(total_amount),
+                'USD',
+                buyer_logon_id,
+                JSON.stringify(orderItems),
+                new Date()
+            ]
+        );
+
+        // Update order status
+        const status = trade_status === 'TRADE_SUCCESS' || trade_status === 'TRADE_FINISHED' ? 'completed' : 'failed';
+        await db.query('UPDATE orders SET status = ? WHERE orderID = ?', [status, orderID]);
+
+        res.status(200).send('success');
+    } catch (err) {
+        console.error('Alipay webhook error:', err);
+        res.status(500).send('Internal Server Error');
     }
 });
 
@@ -498,7 +637,7 @@ app.post('/paypal-webhook', async (req, res) => {
 
         // Check if transaction already processed
         const paypalTxnId = req.body.txn_id;
-        const [existing] = await db.query('SELECT transaction_id FROM transactions WHERE paypal_txn_id = ?', [paypalTxnId]);
+        const [existing] = await db.query('SELECT transaction_id FROM transactions WHERE transaction_id_external = ?', [paypalTxnId]);
         if (existing.length > 0) {
             console.warn('Transaction already processed:', paypalTxnId);
             return res.status(200).send('OK');
@@ -513,7 +652,6 @@ app.post('/paypal-webhook', async (req, res) => {
         }
 
         const order = orders[0];
-        // Check if order.items is already an object; if not, parse it
         const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
 
         // Regenerate digest
@@ -535,16 +673,17 @@ app.post('/paypal-webhook', async (req, res) => {
 
         // Save transaction with product list
         await db.query(
-            'INSERT INTO transactions (orderID, paypal_txn_id, payment_status, payment_amount, currency_code, payer_email, created_at, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO transactions (orderID, payment_provider, transaction_id_external, payment_status, payment_amount, currency_code, payer_email, items, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 orderID,
+                'paypal',
                 paypalTxnId,
                 req.body.payment_status,
                 parseFloat(req.body.mc_gross),
                 req.body.mc_currency,
                 req.body.payer_email,
-                new Date(),
-                JSON.stringify(orderItems)
+                JSON.stringify(orderItems),
+                new Date()
             ]
         );
 

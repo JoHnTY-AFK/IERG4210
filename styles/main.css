@@ -12,7 +12,7 @@
   --card-border: rgba(255, 255, 255, 0.2);
   --glow-color: rgba(0, 212, 255, 0.5);
   --shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  --transition: all 0.3s ease; /* Retained for other hover effects */
+  --transition: all 0.3s ease;
 }
 
 /* General Styles */
@@ -334,7 +334,7 @@ header nav ul li a:hover {
   position: fixed;
   top: 70px;
   right: 20px;
-  background: rgba(30, 30, 50, 0.9); /* Darker, more opaque background for contrast */
+  background: rgba(30, 30, 50, 0.9);
   backdrop-filter: blur(5px);
   border: 1px solid var(--card-border);
   padding: 20px;
@@ -376,7 +376,7 @@ header nav ul li a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(50, 50, 80, 0.5); /* Darker background for list items */
+  background: rgba(50, 50, 80, 0.5);
   padding: 10px;
   border-radius: 10px;
 }
@@ -395,7 +395,7 @@ header nav ul li a:hover {
   border-radius: 4px;
   text-align: center;
   font-size: 0.9em;
-  background: rgba(20, 20, 40, 0.8); /* Darker input background */
+  background: rgba(20, 20, 40, 0.8);
   color: var(--text-color);
   transition: var(--transition);
 }
@@ -404,6 +404,98 @@ header nav ul li a:hover {
   border-color: var(--accent-color);
   box-shadow: 0 0 5px var(--glow-color);
   outline: none;
+}
+
+/* Payment Selector */
+.payment-selector {
+  margin: 15px 0;
+  padding: 15px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.payment-selector h4 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2em;
+  color: var(--text-color);
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  margin: 5px 0;
+  background: rgba(50, 50, 80, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.payment-option:hover {
+  background: rgba(50, 50, 80, 0.7);
+  box-shadow: 0 0 10px var(--glow-color);
+}
+
+.payment-option input[type="radio"] {
+  display: none;
+}
+
+.payment-option input[type="radio"]:checked + .payment-icon::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  box-shadow: 0 0 5px var(--glow-color);
+}
+
+.payment-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.paypal-icon {
+  background-image: url('/public/images/paypal-icon.png');
+}
+
+.alipay-icon {
+  background-image: url('/public/images/alipay-icon.png');
+}
+
+.payment-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--text-color);
+  flex: 1;
+}
+
+.payment-desc {
+  font-size: 0.8em;
+  color: rgba(230, 230, 250, 0.7);
+}
+
+.payment-option input[type="radio"]:checked ~ .payment-label {
+  color: var(--accent-color);
+  text-shadow: 0 0 5px var(--glow-color);
+}
+
+.payment-option input[type="radio"]:checked ~ .payment-desc {
+  color: var(--text-color);
 }
 
 /* Scrollbar Styling */
@@ -462,43 +554,6 @@ header nav ul li a:hover {
 .notification.show {
   opacity: 1;
   transform: translateY(0);
-}
-
-/* Close Button */
-.close-cart {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.2em;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.close-cart:hover {
-  color: var(--accent-color);
-  text-shadow: 0 0 5px var(--glow-color);
-}
-
-/* Scrollbar Styling */
-.shopping-cart::-webkit-scrollbar {
-  width: 8px;
-}
-
-.shopping-cart::-webkit-scrollbar-track {
-  background: var(--card-bg);
-  border-radius: 4px;
-}
-
-.shopping-cart::-webkit-scrollbar-thumb {
-  background: var(--accent-color);
-  border-radius: 4px;
-}
-
-.shopping-cart::-webkit-scrollbar-thumb:hover {
-  background: var(--highlight-color);
 }
 
 /* Login Page */
@@ -580,6 +635,56 @@ header nav ul li a:hover {
 .login-container button[type="submit"]:hover {
   transform: scale(1.02);
   box-shadow: 0 0 15px var(--glow-color);
+}
+
+/* Pagination Styles */
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.pagination button {
+  padding: 10px 20px;
+  margin: 0 10px;
+  cursor: pointer;
+  background: linear-gradient(45deg, #1e3a8a, #3b82f6);
+  border: 2px solid #60a5fa;
+  border-radius: 25px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.pagination button:hover:not(:disabled) {
+  background: linear-gradient(45deg, #3b82f6, #60a5fa);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  transform: scale(1.05);
+}
+
+.pagination button:active:not(:disabled) {
+  background: linear-gradient(45deg, #1e40af, #2563eb);
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  transform: scale(0.95);
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: linear-gradient(45deg, #4b5563, #6b7280);
+  border-color: #6b7280;
+  box-shadow: none;
+}
+
+.pagination span {
+  margin: 0 15px;
+  color: #60a5fa;
+  font-size: 16px;
+  font-weight: 500;
+  text-shadow: 0 0 5px rgba(96, 165, 250, 0.5);
 }
 
 /* Orders Page */
@@ -708,6 +813,22 @@ footer p {
   .orders li p {
     font-size: 0.9em;
   }
+
+  .payment-selector {
+    padding: 10px;
+  }
+
+  .payment-option {
+    padding: 8px;
+  }
+
+  .payment-label {
+    font-size: 0.9em;
+  }
+
+  .payment-desc {
+    font-size: 0.7em;
+  }
 }
 
 @media (max-width: 480px) {
@@ -732,5 +853,23 @@ footer p {
 
   .login-container h1 {
     font-size: 1.5rem;
+  }
+
+  .payment-selector h4 {
+    font-size: 1em;
+  }
+
+  .payment-option {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .payment-icon {
+    margin-bottom: 5px;
+  }
+
+  .payment-desc {
+    display: none;
   }
 }
