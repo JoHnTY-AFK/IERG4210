@@ -211,6 +211,59 @@ header nav ul li a:hover {
   margin-bottom: 15px;
 }
 
+/* Loading Indicator */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 15px 30px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1em;
+  color: var(--text-color);
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--card-border);
+  border-radius: 15px;
+  margin: 20px auto;
+  width: fit-content;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.5s ease;
+}
+
+.loading.visible {
+  display: block;
+}
+
+.loading::before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--accent-color);
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+/* No More Products */
+.no-more {
+  text-align: center;
+  padding: 15px 30px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1em;
+  color: rgba(230, 230, 250, 0.7); /* Muted version of --text-color */
+  border-top: 1px solid var(--card-border);
+  margin: 20px auto;
+  max-width: 1200px;
+  transition: var(--transition);
+}
+
+.no-more:hover {
+  color: var(--text-color);
+  text-shadow: 0 0 5px var(--glow-color);
+}
+
 /* Product Details (for product.html) */
 .product-details {
   display: flex;
@@ -588,6 +641,7 @@ header nav ul li a:hover {
   text-align: center;
   font-family: 'Orbitron', sans-serif; /* Futuristic font */
 }
+
 .pagination button {
   padding: 10px 20px;
   margin: 0 10px;
@@ -602,16 +656,19 @@ header nav ul li a:hover {
   transition: all 0.3s ease;
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); /* Subtle glow */
 }
+
 .pagination button:hover:not(:disabled) {
   background: linear-gradient(45deg, #3b82f6, #60a5fa);
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); /* Enhanced glow on hover */
   transform: scale(1.05); /* Slight scale-up effect */
 }
+
 .pagination button:active:not(:disabled) {
   background: linear-gradient(45deg, #1e40af, #2563eb);
   box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
   transform: scale(0.95); /* Slight press effect */
 }
+
 .pagination button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
@@ -619,6 +676,7 @@ header nav ul li a:hover {
   border-color: #6b7280;
   box-shadow: none;
 }
+
 .pagination span {
   margin: 0 15px;
   color: #60a5fa;
@@ -714,6 +772,11 @@ footer p {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .product-list {
@@ -753,6 +816,11 @@ footer p {
   .orders li p {
     font-size: 0.9em;
   }
+
+  .loading, .no-more {
+    padding: 10px 20px;
+    font-size: 0.9em;
+  }
 }
 
 @media (max-width: 480px) {
@@ -777,5 +845,9 @@ footer p {
 
   .login-container h1 {
     font-size: 1.5rem;
+  }
+
+  .loading, .no-more {
+    margin: 10px;
   }
 }
