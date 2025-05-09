@@ -13,8 +13,8 @@
         <nav>
             <ul>
                 <li><a href="/">Home</a></li>
-                <li><a href="#">Categories</a></li>
-                <li><a href="#">About</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/about">About</a></li>
                 <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
                 <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
                 <li><form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link" style="display: none;">Logout</button></form></li>
@@ -40,17 +40,6 @@
         <ul class="cart-items"></ul>
     </div>
 
-    <div id="chat-box" class="chat-box">
-        <button id="close-chat" class="close-chat">×</button>
-        <h3>Customer Support</h3>
-        <div id="chat-messages" class="chat-messages"></div>
-        <div class="chat-input">
-            <textarea id="chat-input" placeholder="Type your message..."></textarea>
-            <button id="send-message">Send</button>
-        </div>
-    </div>
-    <button id="chat-button" class="chat-button">Chat with Us</button>
-
     <footer>
         <p>© 2025 Dummy Shopping Website</p>
     </footer>
@@ -63,7 +52,8 @@
             let totalPages = 1;
             const ordersPerPage = 5;
 
-            fetch('/csrf-token', { credentials: 'include' })
+            // Handle CSRF token for logout
+            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     const logoutForm = document.getElementById('logout-form');
@@ -75,7 +65,7 @@
                         button.disabled = true;
                         
                         try {
-                            const response = await fetch('/logout', {
+                            const response = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/logout', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -93,7 +83,7 @@
                             window.location.href = result.redirect || '/login';
                         } catch (err) {
                             console.error('Logout error:', err);
-                            fetch('/csrf-token', { credentials: 'include' })
+                            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
                                 .then(res => res.json())
                                 .then(data => {
                                     document.querySelector('#logout-form input[name="csrfToken"]').value = data.csrfToken;
@@ -106,7 +96,8 @@
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
-            fetch('/user', { credentials: 'include' })
+            // Handle user status
+            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/user', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     const userStatus = document.getElementById('user-status');
@@ -126,17 +117,23 @@
                             adminLink.style.display = 'none';
                         }
                     } else {
-                        window.location.href = '/login';
+                        userStatus.textContent = 'Login';
+                        userStatus.style.display = 'inline';
+                        logoutLink.style.display = 'none';
+                        ordersLink.style.display = 'none';
+                        if (adminLink) {
+                            adminLink.style.display = 'none';
+                        }
+                        userStatus.onclick = () => window.location.href = '/login';
+                        document.querySelector('.orders').innerHTML = '<p>Please log in to view your orders.</p>';
                     }
                 })
-                .catch(err => {
-                    console.error('User fetch error:', err);
-                    window.location.href = '/login';
-                });
+                .catch(err => console.error('User fetch error:', err));
 
+            // Fetch and display orders with pagination
             const fetchOrders = async (page) => {
                 try {
-                    const response = await fetch(`/orders-data?page=${page}`, { credentials: 'include' });
+                    const response = await fetch(`https://ierg4210.koreacentral.cloudapp.azure.com/orders-data?page=${page}`, { credentials: 'include' });
                     if (!response.ok) {
                         if (response.status === 401) {
                             window.location.href = '/login';
@@ -144,7 +141,7 @@
                         throw new Error(`Failed to fetch orders: ${response.statusText}`);
                     }
                     const data = await response.json();
-                    console.log('API Response for page', page, ':', data); // Enhanced logging
+                    console.log('API Response for page', page, ':', data); // Debug log
 
                     const orderList = document.getElementById('order-list');
                     orderList.innerHTML = '';
@@ -154,8 +151,12 @@
 
                     if (Array.isArray(data)) {
                         orders = data;
-                        total = data.length; // Fallback if total is missing
-                        console.log('Using array length as total:', total);
+                        // Fetch the total separately if the backend doesn't provide it
+                        const totalResponse = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/orders-data/total', { credentials: 'include' });
+                        if (!totalResponse.ok) throw new Error('Failed to fetch total orders');
+                        const totalData = await totalResponse.json();
+                        total = totalData.total || orders.length;
+                        console.log('Fetched total:', total);
                     } else if (data.orders && typeof data.total === 'number') {
                         orders = data.orders;
                         total = data.total;
@@ -165,22 +166,25 @@
                     }
 
                     if (orders.length === 0) {
-                        orderList.innerHTML = '<li>No recent orders found.</li>';
+                        orderList.innerHTML = '<p>No orders found.</p>';
                         totalPages = 1;
                     } else {
                         orders.forEach(order => {
-                            const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
-                            const itemList = items.map(item => `<li>${DOMPurify.sanitize(item.name || 'Unknown')} (Qty: ${item.quantity}, Price: $${item.price})</li>`).join('');
-                            const orderItem = document.createElement('li');
-                            orderItem.className = `order-item status-${order.status.toLowerCase()}`;
-                            orderItem.innerHTML = DOMPurify.sanitize(`
+                            const itemsArray = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                            const items = itemsArray.map(item => 
+                                `Product #${item.pid}: ${item.quantity} x $${parseFloat(item.price).toFixed(2)}`
+                            ).join(', ');
+                            const li = document.createElement('li');
+                            li.className = `order-item status-${order.status.toLowerCase()}`;
+                            const totalAmount = parseFloat(order.total_amount);
+                            li.innerHTML = DOMPurify.sanitize(`
                                 <p><strong>Order ID:</strong> ${order.order_id}</p>
-                                <p><strong>Total:</strong> $${order.total_amount}</p>
+                                <p><strong>Total Amount:</strong> $${isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}</p>
+                                <p><strong>Items:</strong> ${items}</p>
                                 <p><strong>Status:</strong> <span class="status-${order.status.toLowerCase()}">${order.status}</span></p>
                                 <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
-                                <ul class="order-items">${itemList}</ul>
                             `);
-                            orderList.appendChild(orderItem);
+                            orderList.appendChild(li);
                         });
 
                         totalPages = Math.ceil(total / ordersPerPage);
@@ -196,7 +200,7 @@
                     nextButton.disabled = page === totalPages || totalPages === 1;
                 } catch (err) {
                     console.error('Orders fetch error:', err);
-                    document.getElementById('order-list').innerHTML = '<li>Error loading orders: ' + err.message + '</li>';
+                    document.getElementById('order-list').innerHTML = '<p>Error loading orders: ' + err.message + '</p>';
                 }
             };
 
@@ -217,5 +221,5 @@
             fetchOrders(currentPage);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d206409f11b04c',t:'MTc0NjgwMjM4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d2bde8fbb6b0dc',t:'MTc0NjgwOTkwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d2dd52f93032ec',t:'MTc0NjgxMTE5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
