@@ -1,7 +1,7 @@
 /* General Styles */
 body {
-  font-family: 'Inter', sans-serif;
-  background: #1e3a8a;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   margin: 0;
   padding: 0;
   color: #ffffff;
@@ -9,9 +9,9 @@ body {
 }
 
 header {
-  background: #1e3a8a;
+  background: #1a1a2e;
   padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -19,9 +19,10 @@ header {
 
 header h1 {
   margin: 0;
-  color: #ffffff;
+  color: #2dd4bf;
   font-size: 2.2em;
   text-align: center;
+  text-shadow: 0 1px 5px rgba(45, 212, 191, 0.3);
 }
 
 nav ul {
@@ -43,23 +44,24 @@ nav ul li {
   font-weight: 500;
   text-decoration: none;
   color: #ffffff;
-  background: #10b981;
+  background: #2dd4bf;
   border: none;
-  border-radius: 4px;
-  transition: background 0.2s ease, transform 0.2s ease;
-  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(45, 212, 191, 0.3);
 }
 
 .nav-button:hover {
-  background: #059669;
+  background: #26a69a;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.5);
 }
 
 /* Jump Navigation */
 .jump-nav {
-  background: #1e3a8a;
+  background: #1a1a2e;
   padding: 15px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   position: sticky;
   top: 80px;
   z-index: 999;
@@ -70,23 +72,25 @@ nav ul li {
 }
 
 .jump-nav a {
-  color: #10b981;
+  color: #2dd4bf;
   text-decoration: none;
   padding: 8px 15px;
-  border: 1px solid #10b981;
-  border-radius: 4px;
+  border: 1px solid #2dd4bf;
+  border-radius: 6px;
   font-size: 0.9em;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.3s ease;
 }
 
 .jump-nav a:hover {
-  background: #10b981;
-  color: #ffffff;
+  background: #2dd4bf;
+  color: #1a1a2e;
+  box-shadow: 0 2px 8px rgba(45, 212, 191, 0.5);
 }
 
 .jump-nav a.active {
-  background: #10b981;
-  color: #ffffff;
+  background: #2dd4bf;
+  color: #1a1a2e;
+  box-shadow: 0 2px 8px rgba(45, 212, 191, 0.5);
 }
 
 /* Admin Panel Container */
@@ -94,10 +98,10 @@ nav ul li {
   max-width: 1000px;
   margin: 20px auto;
   padding: 20px;
-  background: #f3f4f6;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  color: #1e3a8a;
+  background: #f1f5f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  color: #1a1a2e;
 }
 
 /* Section Content */
@@ -112,7 +116,7 @@ nav ul li {
 }
 
 .section-content h2, .section-content h3 {
-  color: #1e3a8a;
+  color: #1a1a2e;
 }
 
 .section-content h2 {
@@ -136,19 +140,20 @@ nav ul li {
 .card {
   background: #ffffff;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(45, 212, 191, 0.3);
 }
 
 .card h3 {
   margin: 0 0 10px;
-  color: #1e3a8a;
+  color: #1a1a2e;
   font-size: 1.2em;
 }
 
@@ -156,7 +161,7 @@ nav ul li {
   margin: 0;
   font-size: 1.5em;
   font-weight: 600;
-  color: #1e3a8a;
+  color: #1a1a2e;
 }
 
 /* Form Styles */
@@ -164,20 +169,21 @@ form {
   margin-bottom: 25px;
   padding: 20px;
   background: #ffffff;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 form:hover {
   transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(45, 212, 191, 0.2);
 }
 
 form label {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #1e3a8a;
+  color: #1a1a2e;
   font-size: 1em;
 }
 
@@ -189,11 +195,11 @@ form select {
   width: 100%;
   padding: 10px;
   margin-bottom: 15px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   font-size: 1em;
   background: #f9fafb;
-  color: #1e3a8a;
+  color: #1a1a2e;
   transition: border-color 0.2s ease;
 }
 
@@ -202,7 +208,7 @@ form input[type="number"]:focus,
 form input[type="password"]:focus,
 form textarea:focus,
 form select:focus {
-  border-color: #10b981;
+  border-color: #2dd4bf;
   outline: none;
 }
 
@@ -214,15 +220,15 @@ form textarea {
 form input[type="file"] {
   padding: 8px;
   background: #f9fafb;
-  color: #1e3a8a;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
+  color: #1a1a2e;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   width: 100%;
 }
 
 /* Error Message Styles */
 .error {
-  color: #dc2626;
+  color: #fb7185;
   font-size: 0.95em;
   margin-bottom: 15px;
   text-align: center;
@@ -235,27 +241,30 @@ button {
   font-size: 1em;
   font-weight: 600;
   color: #ffffff;
-  background: #10b981;
+  background: #2dd4bf;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(45, 212, 191, 0.3);
 }
 
 button:hover {
-  background: #059669;
+  background: #26a69a;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.5);
 }
 
 /* Back to Dashboard Button */
 .back-to-dashboard {
-  background: #1e3a8a;
+  background: #1a1a2e;
   margin-top: 20px;
   width: 100%;
 }
 
 .back-to-dashboard:hover {
-  background: #1a2e74;
+  background: #2a2a4e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* Action Button Styles */
@@ -264,19 +273,22 @@ button:hover {
   padding: 6px 12px;
   margin: 5px;
   color: #ffffff;
-  background: #10b981;
+  background: #2dd4bf;
   text-decoration: none;
-  border-radius: 4px;
-  transition: background 0.2s ease;
+  border-radius: 6px;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(45, 212, 191, 0.3);
 }
 
 .view-product:hover {
-  background: #059669;
+  background: #26a69a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.5);
 }
 
 .edit-product,
 .edit-category {
-  background: #1e3a8a;
+  background: #1a1a2e;
   padding: 6px 12px;
   margin: 5px;
   color: #ffffff;
@@ -284,12 +296,13 @@ button:hover {
 
 .edit-product:hover,
 .edit-category:hover {
-  background: #1a2e74;
+  background: #2a2a4e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .delete-product,
 .delete-category {
-  background: #dc2626;
+  background: #fb7185;
   padding: 6px 12px;
   margin: 5px;
   color: #ffffff;
@@ -297,7 +310,8 @@ button:hover {
 
 .delete-product:hover,
 .delete-category:hover {
-  background: #b91c1c;
+  background: #f43f5e;
+  box-shadow: 0 4px 12px rgba(251, 113, 133, 0.5);
 }
 
 /* List Styles */
@@ -315,24 +329,24 @@ button:hover {
 #message-list li {
   margin: 10px 0;
   padding: 15px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
   background: #ffffff;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  color: #1e3a8a;
+  color: #1a1a2e;
 }
 
 #product-list li:hover,
 #category-list li:hover,
 #order-list li:hover,
 #message-list li:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(45, 212, 191, 0.2);
 }
 
 /* Orders Nested List Styles */
@@ -346,22 +360,22 @@ button:hover {
 #order-list li ul li {
   margin: 5px 0;
   padding: 5px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   background: #f9fafb;
   font-size: 0.9em;
-  color: #1e3a8a;
+  color: #1a1a2e;
 }
 
 /* Messages List Styles */
 #message-list li p {
   margin: 5px 0;
   font-size: 1em;
-  color: #1e3a8a;
+  color: #1a1a2e;
 }
 
 #message-list li p strong {
-  color: #10b981;
+  color: #2dd4bf;
   font-weight: 600;
 }
 
@@ -375,18 +389,18 @@ button:hover {
   margin-top: 15px;
   padding: 15px;
   background: #ffffff;
-  border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
 }
 
 .respond-form textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   background: #f9fafb;
-  color: #1e3a8a;
+  color: #1a1a2e;
   font-size: 1em;
   resize: vertical;
   min-height: 80px;
@@ -395,7 +409,7 @@ button:hover {
 }
 
 .respond-form textarea:focus {
-  border-color: #10b981;
+  border-color: #2dd4bf;
   outline: none;
 }
 
@@ -407,8 +421,8 @@ button:hover {
 footer {
   text-align: center;
   padding: 20px;
-  background: #1e3a8a;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+  background: #1a1a2e;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
   margin-top: 20px;
 }
 

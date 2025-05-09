@@ -13,7 +13,6 @@
         <nav>
             <ul>
                 <li><a href="/" class="nav-button">Back to Homepage</a></li>
-                <li><form id="logout-form" method="POST" action="/logout"><button type="submit" class="nav-button">Logout</button></form></li>
             </ul>
         </nav>
     </header>
@@ -133,7 +132,6 @@
                     document.getElementById('product-csrfToken').value = data.csrfToken;
                     document.getElementById('category-csrfToken').value = data.csrfToken;
                     document.getElementById('password-csrfToken').value = data.csrfToken;
-                    document.getElementById('logout-form').insertAdjacentHTML('afterbegin', `<input type="hidden" name="csrfToken" value="${data.csrfToken}">`);
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
@@ -148,35 +146,6 @@
                     console.error('User fetch error:', err);
                     window.location.href = '/login';
                 });
-
-            document.getElementById('logout-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const button = e.target.querySelector('button[type="submit"]');
-                button.disabled = true;
-                
-                try {
-                    const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
-                    const csrfData = await csrfResponse.json();
-                    const response = await fetch('/logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': csrfData.csrfToken
-                        },
-                        credentials: 'include'
-                    });
-                    
-                    if (!response.ok) throw new Error('Logout failed');
-                    
-                    const result = await response.json();
-                    window.location.href = result.redirect || '/login';
-                } catch (err) {
-                    console.error('Logout error:', err);
-                    window.location.href = '/login';
-                } finally {
-                    button.disabled = false;
-                }
-            });
 
             function loadCategories() {
                 fetch('/categories')
@@ -218,7 +187,7 @@
                             const li = document.createElement('li');
                             li.innerHTML = DOMPurify.sanitize(`
                                 ${product.name} - $${product.price}
-                                <a href="/product?pid=${product.pid}" target="_blank">View</a>
+                                <a href="/product?pid=${product.pid}" target="_blank" class="view-product">View</a>
                                 <button class="edit-product" data-pid="${product.pid}">Edit</button>
                                 <button class="delete-product" data-pid="${product.pid}">Delete</button>
                             `);
