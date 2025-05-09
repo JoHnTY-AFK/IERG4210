@@ -23,8 +23,8 @@ document.addEventListener('click', (event) => {
     }
 });
 
-// Function to sanitize payment form fields
-function sanitizePaymentField(value) {
+// Function to sanitize PayPal form fields
+function sanitizePayPalField(value) {
     return value.replace(/[^a-zA-Z0-9\s\-,.]/g, '');
 }
 
@@ -35,17 +35,15 @@ function updateCartUI() {
     cartItems.innerHTML = '';
 
     let totalAmount = 0;
-
-    // Create PayPal form
-    const paypalForm = document.createElement('form');
-    paypalForm.id = 'paypal-form';
-    paypalForm.method = 'POST';
-    paypalForm.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
+    const form = document.createElement('form');
+    form.id = 'paypal-form';
+    form.method = 'POST';
+    form.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
 
     // PayPal required hidden fields
     const returnUrl = `${window.location.origin}/?payment=success`;
     const notifyUrl = `${window.location.origin}/paypal-webhook`;
-    paypalForm.innerHTML = `
+    form.innerHTML = `
         <input type="hidden" name="cmd" value="_cart">
         <input type="hidden" name="upload" value="1">
         <input type="hidden" name="business" value="testing6070@example.com">
@@ -57,12 +55,6 @@ function updateCartUI() {
         <input type="hidden" name="notify_url" value="${notifyUrl}">
     `;
 
-    // Create Alipay form
-    const alipayForm = document.createElement('form');
-    alipayForm.id = 'alipay-form';
-    alipayForm.method = 'POST';
-    alipayForm.action = '/alipay-create-payment';
-
     cart.forEach((item, index) => {
         totalAmount += item.price * item.quantity;
         const itemIndex = index + 1;
@@ -70,14 +62,8 @@ function updateCartUI() {
         cartItem.innerHTML = DOMPurify.sanitize(`
             ${item.name} - <input type="number" value="${item.quantity}" min="0" data-pid="${item.pid}"> x $${item.price}
         `);
-        const sanitizedName = sanitizePaymentField(item.name);
-        paypalForm.innerHTML += `
-            <input type="hidden" name="item_name_${itemIndex}" value="${sanitizedName}">
-            <input type="hidden" name="item_number_${itemIndex}" value="${item.pid}">
-            <input type="hidden" name="amount_${itemIndex}" value="${item.price}">
-            <input type="hidden" name="quantity_${itemIndex}" value="${item.quantity}">
-        `;
-        alipayForm.innerHTML += `
+        const sanitizedName = sanitizePayPalField(item.name);
+        form.innerHTML += `
             <input type="hidden" name="item_name_${itemIndex}" value="${sanitizedName}">
             <input type="hidden" name="item_number_${itemIndex}" value="${item.pid}">
             <input type="hidden" name="amount_${itemIndex}" value="${item.price}">
@@ -91,32 +77,11 @@ function updateCartUI() {
     totalElement.textContent = `Total: $${totalAmount.toFixed(2)}`;
     cartItems.appendChild(totalElement);
 
-    // Payment method selector with radio buttons
-    const paymentSelector = document.createElement('div');
-    paymentSelector.className = 'payment-selector';
-    paymentSelector.innerHTML = DOMPurify.sanitize(`
-        <h4>Select Payment Method</h4>
-        <label class="payment-option">
-            <input type="radio" name="payment-method" value="paypal" checked>
-            <span class="payment-icon paypal-icon"></span>
-            <span class="payment-label">PayPal</span>
-            <span class="payment-desc">Secure payments with PayPal</span>
-        </label>
-        <label class="payment-option">
-            <input type="radio" name="payment-method" value="alipay">
-            <span class="payment-icon alipay-icon"></span>
-            <span class="payment-label">Alipay</span>
-            <span class="payment-desc">Fast and secure with Alipay</span>
-        </label>
-    `);
-
     const checkoutButton = document.createElement('button');
     checkoutButton.className = 'checkout';
     checkoutButton.textContent = 'Checkout';
-    cartItems.appendChild(paymentSelector);
-    cartItems.appendChild(paypalForm);
-    cartItems.appendChild(alipayForm);
-    cartItems.appendChild(checkoutButton);
+    cartItems.appendChild(form);
+    form.appendChild(checkoutButton);
 
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     cartButton.textContent = `Cart (${totalItems})`;
@@ -150,9 +115,6 @@ document.addEventListener('click', (event) => {
             return;
         }
 
-        const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
-        console.log('Selected payment method:', paymentMethod);
-
         // Validate quantities
         const items = cart.map(item => ({
             pid: parseInt(item.pid),
@@ -177,7 +139,7 @@ document.addEventListener('click', (event) => {
                 return fetch('/validate-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ items, csrfToken, payment_provider: paymentMethod }),
+                    body: JSON.stringify({ items, csrfToken }),
                     credentials: 'include'
                 });
             })
@@ -186,37 +148,27 @@ document.addEventListener('click', (event) => {
                 return response.json();
             })
             .then(data => {
-                if (paymentMethod === 'paypal') {
-                    const paypalForm = document.getElementById('paypal-form');
-                    document.getElementById('invoice').value = data.orderID;
-                    document.getElementById('custom').value = data.digest;
+                const form = document.getElementById('paypal-form');
+                document.getElementById('invoice').value = data.orderID;
+                document.getElementById('custom').value = data.digest;
 
-                    // Log PayPal form data before submission
-                    const formData = new FormData(paypalForm);
-                    const formDataObject = {};
-                    for (let [key, value] of formData.entries()) {
-                        formDataObject[key] = value;
-                    }
-                    console.log('PayPal form data (before submission):', formDataObject);
-
-                    // Validate that cart items are present
-                    if (!formDataObject['item_name_1']) {
-                        console.error('No cart items found in form data');
-                        alert('Error: Cart items are missing. Please try adding items again.');
-                        return;
-                    }
-
-                    // Submit the PayPal form
-                    paypalForm.submit();
-                } else if (paymentMethod === 'alipay') {
-                    const alipayForm = document.getElementById('alipay-form');
-                    alipayForm.innerHTML += `
-                        <input type="hidden" name="orderID" value="${data.orderID}">
-                        <input type="hidden" name="digest" value="${data.digest}">
-                    `;
-                    // Submit the Alipay form to backend for payment creation
-                    alipayForm.submit();
+                // Log form data before submission
+                const formData = new FormData(form);
+                const formDataObject = {};
+                for (let [key, value] of formData.entries()) {
+                    formDataObject[key] = value;
                 }
+                console.log('PayPal form data (before submission):', formDataObject);
+
+                // Validate that cart items are present
+                if (!formDataObject['item_name_1']) {
+                    console.error('No cart items found in form data');
+                    alert('Error: Cart items are missing. Please try adding items again.');
+                    return;
+                }
+
+                // Submit the form before clearing the cart
+                form.submit();
 
                 // Clear cart and update UI after submission
                 localStorage.removeItem('cart');

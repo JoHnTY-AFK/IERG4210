@@ -38,7 +38,6 @@ CREATE TABLE orders (
     digest VARCHAR(255) NOT NULL,
     salt VARCHAR(32) NOT NULL,
     status ENUM('pending', 'completed', 'failed') NOT NULL DEFAULT 'pending',
-    payment_provider ENUM('paypal', 'alipay') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE SET NULL
 );
@@ -47,8 +46,7 @@ CREATE TABLE orders (
 CREATE TABLE transactions (
     transaction_id INT AUTO_INCREMENT PRIMARY KEY,
     orderID INT NOT NULL,
-    payment_provider ENUM('paypal', 'alipay') NOT NULL,
-    transaction_id_external VARCHAR(255) NOT NULL,
+    paypal_txn_id VARCHAR(255) NOT NULL,
     payment_status VARCHAR(50) NOT NULL,
     payment_amount DECIMAL(10,2) NOT NULL,
     currency_code VARCHAR(10) NOT NULL,
@@ -83,4 +81,4 @@ INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
 INSERT INTO users (email, password, is_admin) VALUES
 ('admin@example.com', '$2b$10$Ndwr9eo190tkFcXYHrFAaeipj76aGoYtp8gRu9vi1rd7Gd/W8Bhx.', TRUE),
 ('user@example.com', '$2b$10$7pG43mC8YO2Qe7s1fgxFSe3wM1HM16i3.T9HFWzdZk0cF9fg6wPjG', FALSE),
-('testing6070@example.com', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE);
+{'testing6070@example.com', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE};
