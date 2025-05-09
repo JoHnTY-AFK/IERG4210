@@ -19,18 +19,18 @@
     </header>
 
     <div class="jump-nav">
-        <a href="#dashboard">Dashboard</a>
-        <a href="#manage-products">Manage Products</a>
-        <a href="#product-list">Product List</a>
-        <a href="#manage-categories">Manage Categories</a>
-        <a href="#category-list">Category List</a>
-        <a href="#change-password">Change Password</a>
-        <a href="#orders">Orders</a>
-        <a href="#customer-messages">Customer Messages</a>
+        <a href="#dashboard" class="nav-link active" data-target="dashboard" title="View key metrics">Dashboard</a>
+        <a href="#manage-products" class="nav-link" data-target="manage-products" title="Add or update products">Manage Products</a>
+        <a href="#product-list" class="nav-link" data-target="product-list" title="View all products">Product List</a>
+        <a href="#manage-categories" class="nav-link" data-target="manage-categories" title="Add or update categories">Manage Categories</a>
+        <a href="#category-list" class="nav-link" data-target="category-list" title="View all categories">Category List</a>
+        <a href="#change-password" class="nav-link" data-target="change-password" title="Update your password">Change Password</a>
+        <a href="#orders" class="nav-link" data-target="orders" title="View customer orders">Orders</a>
+        <a href="#customer-messages" class="nav-link" data-target="customer-messages" title="View and respond to messages">Customer Messages</a>
     </div>
 
     <section class="admin-panel">
-        <div id="dashboard" class="dashboard">
+        <div id="dashboard" class="section-content active">
             <h2>Dashboard Overview</h2>
             <div class="dashboard-cards">
                 <div class="card">
@@ -52,100 +52,72 @@
             </div>
         </div>
 
-        <div class="section">
-            <h2 id="manage-products">
-                Manage Products
-                <button class="toggle-section" data-target="manage-products-content">▼</button>
-            </h2>
-            <div id="manage-products-content" class="section-content">
-                <form id="product-form" enctype="multipart/form-data">
-                    <input type="hidden" name="csrfToken" id="product-csrfToken">
-                    <label for="product-catid">Category</label>
-                    <select id="product-catid" name="catid" required></select>
-                    <label for="product-name">Product Name</label>
-                    <input type="text" id="product-name" name="name" required>
-                    <label for="product-price">Price</label>
-                    <input type="number" id="product-price" name="price" step="0.01" required>
-                    <label for="product-description">Description</label>
-                    <textarea id="product-description" name="description"></textarea>
-                    <label for="product-image">Image</label>
-                    <input type="file" id="product-image" name="image" accept="image/*">
-                    <button type="submit" id="product-submit">Add Product</button>
-                </form>
-            </div>
+        <div id="manage-products" class="section-content">
+            <h2>Manage Products</h2>
+            <form id="product-form" enctype="multipart/form-data">
+                <input type="hidden" name="csrfToken" id="product-csrfToken">
+                <label for="product-catid">Category</label>
+                <select id="product-catid" name="catid" required></select>
+                <label for="product-name">Product Name</label>
+                <input type="text" id="product-name" name="name" required>
+                <label for="product-price">Price</label>
+                <input type="number" id="product-price" name="price" step="0.01" required>
+                <label for="product-description">Description</label>
+                <textarea id="product-description" name="description"></textarea>
+                <label for="product-image">Image</label>
+                <input type="file" id="product-image" name="image" accept="image/*">
+                <button type="submit" id="product-submit">Add Product</button>
+            </form>
+            <button class="back-to-dashboard" data-target="dashboard">Back to Dashboard</button>
         </div>
 
-        <div class="section">
-            <h3 id="product-list">
-                Product List
-                <button class="toggle-section" data-target="product-list-content">▼</button>
-            </h3>
-            <div id="product-list-content" class="section-content">
-                <ul id="product-list"></ul>
-            </div>
+        <div id="product-list" class="section-content">
+            <h3>Product List</h3>
+            <ul id="product-list"></ul>
+            <button class="back-to-dashboard" data-target="dashboard">Back to Dashboard</button>
         </div>
 
-        <div class="section">
-            <h2 id="manage-categories">
-                Manage Categories
-                <button class="toggle-section" data-target="manage-categories-content">▼</button>
-            </h2>
-            <div id="manage-categories-content" class="section-content">
-                <form id="category-form">
-                    <input type="hidden" name="csrfToken" id="category-csrfToken">
-                    <label for="category-name">Category Name</label>
-                    <input type="text" id="category-name" name="name" required>
-                    <button type="submit" id="category-submit">Add Category</button>
-                </form>
-            </div>
+        <div id="manage-categories" class="section-content">
+            <h2>Manage Categories</h2>
+            <form id="category-form">
+                <input type="hidden" name="csrfToken" id="category-csrfToken">
+                <label for="category-name">Category Name</label>
+                <input type="text" id="category-name" name="name" required>
+                <button type="submit" id="category-submit">Add Category</button>
+            </form>
+            <button class="back-to-dashboard" data-target="dashboard">Back to Dashboard</button>
         </div>
 
-        <div class="section">
-            <h3 id="category-list">
-                Category List
-                <button class="toggle-section" data-target="category-list-content">▼</button>
-            </h3>
-            <div id="category-list-content" class="section-content">
-                <ul id="category-list"></ul>
-            </div>
+        <div id="category-list" class="section-content">
+            <h3>Category List</h3>
+            <ul id="category-list"></ul>
+            <button class="back-to-dashboard" data-target="dashboard">Back to Dashboard</button>
         </div>
 
-        <div class="section">
-            <h2 id="change-password">
-                Change Password
-                <button class="toggle-section" data-target="change-password-content">▼</button>
-            </h2>
-            <div id="change-password-content" class="section-content">
-                <form id="password-form">
-                    <input type="hidden" name="csrfToken" id="password-csrfToken">
-                    <label for="current-password">Current Password</label>
-                    <input type="password" id="current-password" name="currentPassword" required>
-                    <label for="new-password">New Password</label>
-                    <input type="password" id="new-password" name="newPassword" required>
-                    <div id="password-error" class="error"></div>
-                    <button type="submit">Change Password</button>
-                </form>
-            </div>
+        <div id="change-password" class="section-content">
+            <h2>Change Password</h2>
+            <form id="password-form">
+                <input type="hidden" name="csrfToken" id="password-csrfToken">
+                <label for="current-password">Current Password</label>
+                <input type="password" id="current-password" name="currentPassword" required>
+                <label for="new-password">New Password</label>
+                <input type="password" id="new-password" name="newPassword" required>
+                <div id="password-error" class="error"></div>
+                <button type="submit">Change Password</button>
+            </form>
+            <button class="back-to-dashboard" data-target="dashboard">Back to Dashboard</button>
         </div>
 
-        <div class="section">
-            <h2 id="orders">
-                Orders
-                <button class="toggle-section" data-target="orders-content">▼</button>
-            </h2>
-            <div id="orders-content" class="section-content">
-                <ul id="order-list"></ul>
-            </div>
+        <div id="orders" class="section-content">
+            <h2>Orders</h2>
+            <ul id="order-list"></ul>
+            <button class="back-to-dashboard" data-target="dashboard">Back to Dashboard</button>
         </div>
 
-        <div class="section">
-            <h2 id="customer-messages">
-                Customer Messages
-                <button class="toggle-section" data-target="customer-messages-content">▼</button>
-            </h2>
-            <div id="customer-messages-content" class="section-content">
-                <ul id="message-list"></ul>
-            </div>
+        <div id="customer-messages" class="section-content">
+            <h2>Customer Messages</h2>
+            <ul id="message-list"></ul>
+            <button class="back-to-dashboard" data-target="dashboard">Back to Dashboard</button>
         </div>
     </section>
 
@@ -414,7 +386,11 @@
             });
 
             document.getElementById('product-list').addEventListener('click', async (e) => {
-                if (e.target.classList.contains('edit-product')) {
+                e.stopPropagation();
+                if (e.target.classList.contains('view-product')) {
+                    // Let the default link behavior handle navigation
+                    return;
+                } else if (e.target.classList.contains('edit-product')) {
                     const pid = e.target.dataset.pid;
                     try {
                         const response = await fetch(`/product/${pid}`);
@@ -425,6 +401,8 @@
                         document.getElementById('product-description').value = DOMPurify.sanitize(product.description);
                         document.getElementById('product-form').dataset.pid = pid;
                         document.getElementById('product-submit').textContent = 'Update Product';
+                        // Switch to Manage Products section
+                        showSection('manage-products');
                     } catch (err) {
                         console.error('Product fetch error:', err);
                         alert('Error loading product');
@@ -450,6 +428,7 @@
             });
 
             document.getElementById('category-list').addEventListener('click', async (e) => {
+                e.stopPropagation();
                 if (e.target.classList.contains('edit-category')) {
                     const catid = e.target.dataset.catid;
                     try {
@@ -459,6 +438,8 @@
                         document.getElementById('category-name').value = DOMPurify.sanitize(category.name);
                         document.getElementById('category-form').dataset.catid = catid;
                         document.getElementById('category-submit').textContent = 'Update Category';
+                        // Switch to Manage Categories section
+                        showSection('manage-categories');
                     } catch (err) {
                         console.error('Category fetch error:', err);
                         alert('Error loading category');
@@ -483,18 +464,43 @@
                 }
             });
 
-            // Toggle section visibility
-            document.querySelectorAll('.toggle-section').forEach(button => {
+            // Function to show a specific section and hide others
+            function showSection(targetId) {
+                document.querySelectorAll('.section-content').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+
+                const targetLink = document.querySelector(`.nav-link[data-target="${targetId}"]`);
+                if (targetLink) {
+                    targetLink.classList.add('active');
+                }
+
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Navigation link click handler
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.dataset.target;
+                    showSection(targetId);
+                });
+            });
+
+            // Back to Dashboard button handler
+            document.querySelectorAll('.back-to-dashboard').forEach(button => {
                 button.addEventListener('click', () => {
                     const targetId = button.dataset.target;
-                    const content = document.getElementById(targetId);
-                    if (content.style.display === 'none') {
-                        content.style.display = 'block';
-                        button.textContent = '▼';
-                    } else {
-                        content.style.display = 'none';
-                        button.textContent = '▶';
-                    }
+                    showSection(targetId);
                 });
             });
 
