@@ -144,7 +144,7 @@
                         throw new Error(`Failed to fetch orders: ${response.statusText}`);
                     }
                     const data = await response.json();
-                    console.log('API Response:', data); // Debug log
+                    console.log('API Response for page', page, ':', data); // Enhanced logging
 
                     const orderList = document.getElementById('order-list');
                     orderList.innerHTML = '';
@@ -154,12 +154,14 @@
 
                     if (Array.isArray(data)) {
                         orders = data;
-                        total = data.length; // Fallback if total isn't provided
+                        total = data.length; // Fallback if total is missing
+                        console.log('Using array length as total:', total);
                     } else if (data.orders && typeof data.total === 'number') {
                         orders = data.orders;
                         total = data.total;
+                        console.log('Using provided total:', total);
                     } else {
-                        throw new Error('Unexpected API response format');
+                        throw new Error('Unexpected API response format: ', data);
                     }
 
                     if (orders.length === 0) {
@@ -182,6 +184,7 @@
                         });
 
                         totalPages = Math.ceil(total / ordersPerPage);
+                        console.log('Calculated totalPages:', totalPages);
                     }
 
                     const prevButton = document.getElementById('prev-page');
