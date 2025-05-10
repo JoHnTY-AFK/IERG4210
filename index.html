@@ -37,6 +37,9 @@
          <button id="user-status" class="user-status">Guest</button>
          <button id="cart-button" class="cart-button">Cart (0)</button>
       </header>
+      <section id="welcome-message" class="welcome-message" style="display: none;">
+         <p>Welcome, <span id="user-name"></span>!</p>
+      </section>
       <section class="breadcrumb">
          <p><a href="/">Home</a> > <span id="breadcrumb-category">All Categories</span></p>
       </section>
@@ -75,6 +78,16 @@
              let isLoading = false;
              let hasMore = true;
              let currentCatid = null;
+
+             // Display Welcome Message if Name is Provided
+             const urlParams = new URLSearchParams(window.location.search);
+             const userName = urlParams.get('name');
+             if (userName) {
+                 const welcomeSection = document.getElementById('welcome-message');
+                 const userNameSpan = document.getElementById('user-name');
+                 userNameSpan.textContent = DOMPurify.sanitize(userName);
+                 welcomeSection.style.display = 'block';
+             }
 
              fetch('/csrf-token', { credentials: 'include' })
                  .then(res => res.json())
@@ -282,5 +295,5 @@
              window.addEventListener('scroll', handleScroll);
          });
       </script>
-   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d2063e4dc6bf64',t:'MTc0NjgwMjM4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+   </body>
 </html>
