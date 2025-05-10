@@ -70,21 +70,31 @@ app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
     }
 }));
 
-// Serve root static files (e.g., CSS) while blocking sensitive files
-app.use(express.static(path.join(__dirname), {
-    setHeaders: (res, path) => {
-        if (path.endsWith('.css') || path.endsWith('.html')) {
-            res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
-        }
-    }
-}));
-
 // Block access to server.js and other sensitive files
 app.use((req, res, next) => {
     if (req.url.includes('.js') && !req.url.startsWith('/public/') && !req.url.startsWith('/images/') && !req.url.startsWith('/uploads/')) {
         return res.status(403).send('Access Denied');
     }
     next();
+});
+
+// Serve specific static files from root (e.g., HTML, CSS)
+app.get('*.html', (req, res) => {
+    const filePath = path.join(__dirname, req.path);
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('Not Found');
+    }
+});
+app.get('*.css', (req, res) => {
+    const filePath = path.join(__dirname, req.path);
+    if (fs.existsSync(filePath)) {
+        res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('Not Found');
+    }
 });
 
 // CSRF Protection
