@@ -6,75 +6,36 @@
     <title>Signup - Dummy Shopping Website</title>
     <link rel="stylesheet" href="/styles/main.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-    <style>
-        .field-error {
-            color: #FF4B2B;
-            font-size: 0.8rem;
-            margin-top: 0.2rem;
-            display: none;
-        }
-        .field-error.visible {
-            display: block;
-        }
-        input.valid {
-            border-color: #00D4FF;
-            box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
-        }
-        input.invalid {
-            border-color: #FF4B2B;
-            box-shadow: 0 0 8px rgba(255, 75, 43, 0.5);
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        .shake {
-            animation: shake 0.3s ease;
-        }
-        @keyframes scaleIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .notification-modal.visible .modal-content {
-            animation: scaleIn 0.3s ease;
-        }
-    </style>
 </head>
 <body>
-    <div class="signup-wrapper">
-        <div class="signup-container">
-            <h1>Create Your Account</h1>
-            <form id="signup-form" novalidate>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <h1 class="signup-title">Create Your Account</h1>
+            <form id="signup-form" class="signup-step" data-step="details">
                 <input type="hidden" name="csrfToken" id="csrfToken">
                 <div class="form-group">
-                    <input type="text" id="firstName" name="firstName" required placeholder=" " aria-describedby="firstName-error">
+                    <input type="text" id="firstName" name="firstName" required placeholder=" ">
                     <label for="firstName">First Name</label>
-                    <div id="firstName-error" class="field-error"></div>
                 </div>
                 <div class="form-group">
-                    <input type="text" id="lastName" name="lastName" required placeholder=" " aria-describedby="lastName-error">
+                    <input type="text" id="lastName" name="lastName" required placeholder=" ">
                     <label for="lastName">Last Name</label>
-                    <div id="lastName-error" class="field-error"></div>
                 </div>
                 <div class="form-group">
-                    <input type="email" id="email" name="email" required placeholder=" " aria-describedby="email-error">
+                    <input type="email" id="email" name="email" required placeholder=" ">
                     <label for="email">Email</label>
-                    <div id="email-error" class="field-error"></div>
                 </div>
                 <div class="form-group">
-                    <input type="password" id="password" name="password" required placeholder=" " aria-describedby="password-error">
+                    <input type="password" id="password" name="password" required placeholder=" ">
                     <label for="password">Password</label>
-                    <div id="password-error" class="field-error"></div>
+                    <div id="password-strength" class="password-strength"></div>
                 </div>
                 <div class="form-group">
-                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder=" " aria-describedby="confirmPassword-error">
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder=" ">
                     <label for="confirmPassword">Confirm Password</label>
-                    <div id="confirmPassword-error" class="field-error"></div>
                 </div>
-                <div id="password-strength" class="password-strength"></div>
                 <div id="form-error" class="error"></div>
-                <button type="submit" id="details-submit">Signup</button>
+                <button type="submit" id="details-submit">Sign Up</button>
             </form>
             <p class="back-link"><a href="/">Back to Home</a> | <a href="/login">Already have an account? Login</a></p>
         </div>
@@ -99,29 +60,6 @@
     <script src="/chat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const errorDiv = document.getElementById('form-error');
-            const signupForm = document.getElementById('signup-form');
-            const submitButton = document.getElementById('details-submit');
-            const passwordInput = document.getElementById('password');
-            const passwordStrengthDiv = document.getElementById('password-strength');
-            const notificationModal = document.getElementById('notification-modal');
-            const continueButton = document.getElementById('modal-continue');
-            const inputs = {
-                firstName: document.getElementById('firstName'),
-                lastName: document.getElementById('lastName'),
-                email: document.getElementById('email'),
-                password: document.getElementById('password'),
-                confirmPassword: document.getElementById('confirmPassword')
-            };
-            const errors = {
-                firstName: document.getElementById('firstName-error'),
-                lastName: document.getElementById('lastName-error'),
-                email: document.getElementById('email-error'),
-                password: document.getElementById('password-error'),
-                confirmPassword: document.getElementById('confirmPassword-error')
-            };
-
-            // Fetch CSRF token
             fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -129,156 +67,79 @@
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
-            // Initialize label positioning
-            Object.values(inputs).forEach(input => {
-                if (input.value.trim() || document.activeElement === input) {
-                    const label = input.nextElementSibling;
-                    if (label && label.tagName === 'LABEL') {
-                        label.style.top = '-0.5rem';
-                        label.style.fontSize = '0.8rem';
-                        label.style.color = 'var(--accent-color)';
-                    }
-                }
-            });
+            const signupForm = document.getElementById('signup-form');
+            const errorDiv = document.getElementById('form-error');
+            const submitButton = document.getElementById('details-submit');
+            const passwordInput = document.getElementById('password');
+            const passwordStrengthDiv = document.getElementById('password-strength');
+            const notificationModal = document.getElementById('notification-modal');
+            const continueButton = document.getElementById('modal-continue');
 
-            // Validation functions
-            const nameRegex = /^[a-zA-Z\s\-]+$/;
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-            function validateField(input, errorDiv, validateFn, errorMsg) {
-                const value = input.value.trim();
-                const isValid = validateFn(value);
-                input.setAttribute('aria-invalid', !isValid);
-                input.classList.toggle('valid', isValid && value);
-                input.classList.toggle('invalid', !isValid && value);
-                errorDiv.textContent = isValid || !value ? '' : errorMsg;
-                errorDiv.classList.toggle('visible', !isValid && value);
-                return isValid || !value;
-            }
-
-            // Real-time validation
-            inputs.firstName.addEventListener('input', () => {
-                validateField(
-                    inputs.firstName,
-                    errors.firstName,
-                    value => nameRegex.test(value) && value.length <= 50,
-                    'First name can only contain letters, spaces, or hyphens (max 50 chars).'
-                );
-            });
-
-            inputs.lastName.addEventListener('input', () => {
-                validateField(
-                    inputs.lastName,
-                    errors.lastName,
-                    value => nameRegex.test(value) && value.length <= 50,
-                    'Last name can only contain letters, spaces, or hyphens (max 50 chars).'
-                );
-            });
-
-            inputs.email.addEventListener('input', () => {
-                validateField(
-                    inputs.email,
-                    errors.email,
-                    value => emailRegex.test(value),
-                    'Please enter a valid email address.'
-                );
-            });
-
-            inputs.password.addEventListener('input', () => {
-                const isValid = validateField(
-                    inputs.password,
-                    errors.password,
-                    value => value.length >= 8 && value.length <= 50,
-                    'Password must be between 8 and 50 characters.'
-                );
-                // Password strength
-                const password = inputs.password.value;
+            // Password Strength Indicator
+            passwordInput.addEventListener('input', () => {
+                const password = passwordInput.value;
                 let strength = 'weak';
                 if (password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password)) {
                     strength = 'strong';
                 } else if (password.length >= 8) {
                     strength = 'medium';
                 }
-                passwordStrengthDiv.textContent = password ? `Password Strength: ${strength.charAt(0).toUpperCase() + strength.slice(1)}` : '';
+                passwordStrengthDiv.textContent = `Password Strength: ${strength.charAt(0).toUpperCase() + strength.slice(1)}`;
                 passwordStrengthDiv.className = `password-strength ${strength}`;
-                // Re-validate confirm password
-                if (inputs.confirmPassword.value) {
-                    validateField(
-                        inputs.confirmPassword,
-                        errors.confirmPassword,
-                        value => value === inputs.password.value,
-                        'Passwords do not match.'
-                    );
-                }
             });
 
-            inputs.confirmPassword.addEventListener('input', () => {
-                validateField(
-                    inputs.confirmPassword,
-                    errors.confirmPassword,
-                    value => value === inputs.password.value,
-                    'Passwords do not match.'
-                );
-            });
-
-            // Form submission
             signupForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                errorDiv.style.display = 'none';
                 submitButton.classList.add('loading');
                 submitButton.disabled = true;
-                submitButton.innerHTML = '<span class="spinner visible"></span> Signing up...';
+                errorDiv.classList.remove('visible'); // Hide error initially
 
-                const firstName = inputs.firstName.value.trim();
-                const lastName = inputs.lastName.value.trim();
-                const email = inputs.email.value.trim();
-                const password = inputs.password.value.trim();
-                const confirmPassword = inputs.confirmPassword.value.trim();
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value.trim();
+                const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
-                // Validate all fields
-                const isFirstNameValid = validateField(
-                    inputs.firstName,
-                    errors.firstName,
-                    value => nameRegex.test(value) && value.length <= 50,
-                    'First name can only contain letters, spaces, or hyphens (max 50 chars).'
-                );
-                const isLastNameValid = validateField(
-                    inputs.lastName,
-                    errors.lastName,
-                    value => nameRegex.test(value) && value.length <= 50,
-                    'Last name can only contain letters, spaces, or hyphens (max 50 chars).'
-                );
-                const isEmailValid = validateField(
-                    inputs.email,
-                    errors.email,
-                    value => emailRegex.test(value),
-                    'Please enter a valid email address.'
-                );
-                const isPasswordValid = validateField(
-                    inputs.password,
-                    errors.password,
-                    value => value.length >= 8 && value.length <= 50,
-                    'Password must be between 8 and 50 characters.'
-                );
-                const isConfirmPasswordValid = validateField(
-                    inputs.confirmPassword,
-                    errors.confirmPassword,
-                    value => value === password,
-                    'Passwords do not match.'
-                );
-
-                if (!isFirstNameValid || !isLastNameValid || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
-                    errorDiv.textContent = 'Please fix the errors above.';
-                    errorDiv.style.display = 'block';
-                    signupForm.classList.add('shake');
-                    setTimeout(() => signupForm.classList.remove('shake'), 300);
+                const nameRegex = /^[a-zA-Z\s\-]+$/;
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!nameRegex.test(firstName)) {
+                    errorDiv.textContent = 'First name can only contain letters, spaces, or hyphens.';
+                    errorDiv.classList.add('visible');
                     submitButton.classList.remove('loading');
                     submitButton.disabled = false;
-                    submitButton.innerHTML = 'Signup';
+                    return;
+                }
+                if (!nameRegex.test(lastName)) {
+                    errorDiv.textContent = 'Last name can only contain letters, spaces, or hyphens.';
+                    errorDiv.classList.add('visible');
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
+                    return;
+                }
+                if (!emailRegex.test(email)) {
+                    errorDiv.textContent = 'Please enter a valid email address.';
+                    errorDiv.classList.add('visible');
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
+                    return;
+                }
+                if (password.length < 8 || password.length > 50) {
+                    errorDiv.textContent = 'Password must be between 8 and 50 characters long.';
+                    errorDiv.classList.add('visible');
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    errorDiv.textContent = 'Passwords do not match.';
+                    errorDiv.classList.add('visible');
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
                     return;
                 }
 
                 const formData = { firstName, lastName, email, password };
+                console.log('Sending form data:', formData);
 
                 try {
                     const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
@@ -294,62 +155,37 @@
 
                     const data = await response.json();
                     if (!response.ok) {
-                        errorDiv.textContent = data.error || 'Failed to sign up. Please try again.';
-                        errorDiv.style.display = 'block';
-                        signupForm.classList.add('shake');
-                        setTimeout(() => signupForm.classList.remove('shake'), 300);
+                        errorDiv.textContent = data.error || 'Failed to sign up.';
+                        errorDiv.classList.add('visible');
                         console.error('Signup failed:', data.error);
                         await fetch('/csrf-token', { credentials: 'include' })
                             .then(res => res.json())
                             .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                         submitButton.classList.remove('loading');
                         submitButton.disabled = false;
-                        submitButton.innerHTML = 'Signup';
                         return;
                     }
 
+                    // Show success popup
                     notificationModal.classList.add('visible');
                     continueButton.addEventListener('click', () => {
                         window.location.href = `/?name=${encodeURIComponent(firstName + ' ' + lastName)}`;
                     });
                 } catch (err) {
                     console.error('Signup error:', err);
-                    errorDiv.textContent = 'An error occurred during signup. Please try again later.';
-                    errorDiv.style.display = 'block';
-                    signupForm.classList.add('shake');
-                    setTimeout(() => signupForm.classList.remove('shake'), 300);
+                    errorDiv.textContent = 'An error occurred during signup.';
+                    errorDiv.classList.add('visible');
                     await fetch('/csrf-token', { credentials: 'include' })
                         .then(res => res.json())
                         .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                     submitButton.classList.remove('loading');
                     submitButton.disabled = false;
-                    submitButton.innerHTML = 'Signup';
                 }
-            });
-
-            // Handle focus and blur for label positioning
-            Object.values(inputs).forEach(input => {
-                input.addEventListener('focus', () => {
-                    const label = input.nextElementSibling;
-                    if (label && label.tagName === 'LABEL') {
-                        label.style.top = '-0.5rem';
-                        label.style.fontSize = '0.8rem';
-                        label.style.color = 'var(--accent-color)';
-                    }
-                });
-                input.addEventListener('blur', () => {
-                    if (!input.value.trim()) {
-                        const label = input.nextElementSibling;
-                        if (label && label.tagName === 'LABEL') {
-                            label.style.top = '50%';
-                            label.style.transform = 'translateY(-50%)';
-                            label.style.fontSize = '1rem';
-                            label.style.color = 'var(--text-color)';
-                        }
-                    }
-                });
             });
         });
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93daa95f2c8d53f8',t:'MTc0Njg5Mjk1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93dae8cedd3b4551',t:'MTc0Njg5NTU1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93db2a96d8804570',t:'MTc0Njg5ODI0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93db970bf9b86772',t:'MTc0NjkwMjY4OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93dbd6502b1e12d5',t:'MTc0NjkwNTI4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
