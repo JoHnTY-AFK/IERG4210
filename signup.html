@@ -3,20 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Dummy Shopping Website</title>
+    <title>Signup - Dummy Shopping Website</title>
     <link rel="stylesheet" href="/styles/main.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 </head>
 <body>
     <div class="login-wrapper">
         <div class="login-container">
-            <h1>Sign Up</h1>
-            <nav>
-                <ul>
-                    <li><a href="/login">Profile</a></li>
-                    <li><a href="/orders">My Orders</a></li>
-                </ul>
-            </nav>
+            <h1>Create Your Account</h1>
             <form id="signup-form">
                 <input type="hidden" name="csrfToken" id="csrfToken">
                 <label for="email">Email</label>
@@ -24,44 +18,53 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required placeholder="Enter your password">
                 <div id="form-error" class="error"></div>
-                <button type="submit">Sign Up</button>
+                <button type="submit">Signup</button>
             </form>
-            <p class="back-link"><a href="/">Back to Home</a></p>
+            <p class="back-link"><a href="/">Back to Home</a> | <a href="/login">Already have an account? Login</a></p>
         </div>
     </div>
-
+    <div id="chat-box" class="chat-box">
+        <button id="close-chat" class="close-chat">×</button>
+        <h3>Customer Support</h3>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input">
+            <textarea id="chat-input" placeholder="Type your message..."></textarea>
+            <button id="send-message">Send</button>
+        </div>
+    </div>
+    <button id="chat-button" class="chat-button">Chat with Us</button>
+    <script src="/chat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Handle CSRF token
-            fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
+            fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('csrfToken').value = data.csrfToken;
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
-            // Handle signup form submission
             document.getElementById('signup-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value.trim();
+                const errorDiv = document.getElementById('form-error');
 
                 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                 if (!emailRegex.test(email)) {
-                    alert('Please enter a valid email address.');
+                    errorDiv.textContent = 'Please enter a valid email address.';
                     return;
                 }
                 if (password.length < 8 || password.length > 50) {
-                    alert('Password must be between 8 and 50 characters long.');
+                    errorDiv.textContent = 'Password must be between 8 and 50 characters long.';
                     return;
                 }
 
                 try {
-                    const csrfResponse = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' });
+                    const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
                     const csrfData = await csrfResponse.json();
                     document.getElementById('csrfToken').value = csrfData.csrfToken;
 
-                    const signupResponse = await fetch('https://ierg4210.koreacentral.cloudapp.azure.com/signup', {
+                    const signupResponse = await fetch('/signup', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email, password, csrfToken: csrfData.csrfToken }),
@@ -70,26 +73,25 @@
 
                     const data = await signupResponse.json();
                     if (!signupResponse.ok) {
-                        alert(data.error || 'Sign-up failed. Email may already be in use.');
-                        fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
+                        errorDiv.textContent = data.error || 'Signup failed. Please try again.';
+                        console.error('Signup failed:', data.error);
+                        await fetch('/csrf-token', { credentials: 'include' })
                             .then(res => res.json())
                             .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                         return;
                     }
 
-                    alert('Sign-up successful! Please log in.');
-                    window.location.href = '/login';
+                    window.location.href = data.redirect || '/';
                 } catch (err) {
-                    console.error('Sign-up error:', err);
-                    alert('An error occurred during sign-up. Please try again later.');
-                    fetch('https://ierg4210.koreacentral.cloudapp.azure.com/csrf-token', { credentials: 'include' })
+                    console.error('Signup error:', err);
+                    errorDiv.textContent = 'An error occurred during signup. Please try again later.';
+                    await fetch('/csrf-token', { credentials: 'include' })
                         .then(res => res.json())
                         .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                 }
             });
         });
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353ca292addb0e8',t:'MTc0NTQ3ODcxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935462d63ca2676e',t:'MTc0NTQ4NDk3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9355dd1cdb6bbfd6',t:'MTc0NTUwMDQ2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c7d2979e2853b5',t:'MTc0NjY5NTQxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading' !==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93daa95f2c8d53f8',t:'MTc0Njg5Mjk1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>

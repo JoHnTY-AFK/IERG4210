@@ -167,7 +167,18 @@ const isAdmin = (req, res, next) => {
 const validateTextInput = (text, maxLength, fieldName) => {
     if (!text || typeof text !== 'string') return `${fieldName} is required`;
     if (text.length > maxLength) return `${fieldName} must be ${maxLength} characters or less`;
-    if (!/^[a-zA-Z0-9\s\-,.?!]+$/.test(text)) return `${fieldName} contains invalid characters`;
+    if (!/^[a-zA-Z0-9\s\-,.?!@]+$/.test(text)) return `${fieldName} contains invalid characters`;
+    return null;
+};
+
+const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) return 'Invalid email format';
+    return null;
+};
+
+const validatePassword = (password) => {
+    if (!password || password.length < 8) return 'Password must be at least 8 characters';
     return null;
 };
 
@@ -187,6 +198,10 @@ app.get('/', (req, res) => {
 
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'signup.html'));
 });
 
 app.get('/product', (req, res) => {
@@ -434,6 +449,70 @@ app.post('/login', validateCsrfToken, async (req, res) => {
         } catch (err) {
             connection.release();
             console.error('Login error:', err.stack);
+            res.status(500).json({ 
+                error: 'Internal server error',
+                details: process.env.NODE_ENV === 'development' ? err.message : null
+            });
+        }
+    } catch (err) {
+        console.error('Connection error:', err.stack);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: process.env.NODE_ENV === 'development' ? err.message : null
+        });
+    }
+});
+
+app.post('/signup', validateCsrfToken, async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        console.log('Signup attempt:', { email, domain: req.hostname });
+
+        const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
+        const passwordError = validatePassword(password);
+        if (emailError || passwordError) {
+            return res.status(400).json({ error: emailError || passwordError });
+        }
+
+        const connection = await db.getConnection();
+        try {
+            const [existingUsers] = await connection.query(
+                'SELECT email FROM users WHERE email = ?',
+                [email]
+            );
+            if (existingUsers.length > 0) {
+                connection.release();
+                return res.status(400).json({ error: 'Email already registered' });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const authToken = crypto.randomBytes(32).toString('hex');
+            const sanitizedEmail = escapeHtml(email);
+
+            const [result] = await connection.query(
+                'INSERT INTO users (email, password, auth_token, is_admin) VALUES (?, ?, ?, ?)',
+                [sanitizedEmail, hashedPassword, authToken, 0]
+            );
+
+            connection.release();
+
+            console.log('Setting authToken cookie for:', req.hostname);
+            res.cookie('authToken', authToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+                maxAge: 2 * 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            res.json({ 
+                success: true,
+                redirect: '/',
+                email: sanitizedEmail
+            });
+        } catch (err) {
+            connection.release();
+            console.error('Signup error:', err.stack);
             res.status(500).json({ 
                 error: 'Internal server error',
                 details: process.env.NODE_ENV === 'development' ? err.message : null
