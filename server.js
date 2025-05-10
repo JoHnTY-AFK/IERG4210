@@ -434,103 +434,67 @@ app.post('/send-verification-code', (req, res) => {
             return res.status(500).send('Database connection failed');
         }
 
-        connection.beginTransaction((err) => {
+        connection.beginTransaction(async (err) => {
             if (err) {
                 console.error('Transaction begin error:', err.message, err.stack);
                 connection.release();
                 return res.status(500).send('Transaction failed');
             }
 
-            // Check if email already exists
-            connection.query('SELECT email FROM users WHERE email = ?', [email], (err, results) => {
-                if (err) {
-                    console.error('Database check error:', err.message, err.stack);
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(500).send('Database error');
-                    });
-                }
-                if (results.length > 0) {
-                    connection.rollback(() => {
-                        connection.release();
-                        return res.status(400).send('Email already registered');
-                    });
+            try {
+                // Check if email already exists
+                const [existing] = await connection.query('SELECT email FROM users WHERE email = ?', [email]);
+                if (existing.length > 0) {
+                    throw new Error('Email already registered');
                 }
 
                 // Hash password
-                bcrypt.hash(password, 10, (err, hash) => {
-                    if (err) {
-                        console.error('Password hashing error:', err.message, err.stack);
-                        return connection.rollback(() => {
-                            connection.release();
-                            res.status(500).send('Error hashing password');
-                        });
+                const hash = await bcrypt.hash(password, 10);
+
+                // Insert user into users table
+                const [userResult] = await connection.query(
+                    'INSERT INTO users (email, firstName, lastName, password, is_admin) VALUES (?, ?, ?, ?, FALSE)',
+                    [email, firstName, lastName, hash]
+                );
+                console.log('User inserted successfully for email:', email);
+
+                // Generate verification code
+                const code = Math.floor(100000 + Math.random() * 900000).toString();
+                const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+                // Insert verification code
+                await connection.query(
+                    'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
+                    [email, code, expiresAt]
+                );
+                console.log('Verification code inserted for email:', email);
+
+                // Commit transaction
+                await connection.commit();
+                console.log('Transaction committed for email:', email);
+
+                // Send email
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: email,
+                    subject: 'Verify Your Email - Dummy Shopping Website',
+                    text: `Your verification code is: ${code}. It expires in 10 minutes.`
+                };
+
+                transporter.sendMail(mailOptions, (error) => {
+                    connection.release();
+                    if (error) {
+                        console.error('Email sending error:', error.message, error.stack);
+                        return res.status(500).send('Error sending verification email: ' + error.message);
                     }
-
-                    // Insert user into users table
-                    connection.query(
-                        'INSERT INTO users (email, firstName, lastName, password, is_admin) VALUES (?, ?, ?, ?, FALSE)',
-                        [email, firstName, lastName, hash],
-                        (err) => {
-                            if (err) {
-                                console.error('User insertion error:', err.message, err.stack);
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).send('Error creating user: ' + err.message);
-                                });
-                            }
-                            console.log('User inserted successfully for email:', email);
-
-                            // Generate verification code
-                            const code = Math.floor(100000 + Math.random() * 900000).toString();
-                            const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-                            // Insert verification code
-                            connection.query(
-                                'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
-                                [email, code, expiresAt],
-                                (err) => {
-                                    if (err) {
-                                        console.error('Verification code insertion error:', err.message, err.stack);
-                                        return connection.rollback(() => {
-                                            connection.release();
-                                            res.status(500).send('Error storing verification code: ' + err.message);
-                                        });
-                                    }
-
-                                    // Commit transaction
-                                    connection.commit((err) => {
-                                        if (err) {
-                                            console.error('Transaction commit error:', err.message, err.stack);
-                                            return connection.rollback(() => {
-                                                connection.release();
-                                                res.status(500).send('Transaction commit failed');
-                                            });
-                                        }
-
-                                        // Send email
-                                        const mailOptions = {
-                                            from: process.env.EMAIL_USER,
-                                            to: email,
-                                            subject: 'Verify Your Email - Dummy Shopping Website',
-                                            text: `Your verification code is: ${code}. It expires in 10 minutes.`
-                                        };
-
-                                        transporter.sendMail(mailOptions, (error) => {
-                                            connection.release();
-                                            if (error) {
-                                                console.error('Email sending error:', error.message, error.stack);
-                                                return res.status(500).send('Error sending verification email: ' + error.message);
-                                            }
-                                            res.send('Verification code sent');
-                                        });
-                                    });
-                                }
-                            );
-                        }
-                    );
+                    res.send('Verification code sent');
                 });
-            });
+            } catch (err) {
+                console.error('Transaction error:', err.message, err.stack);
+                await connection.rollback();
+                connection.release();
+                res.status(500).send('Error during signup process: ' + err.message);
+            }
         });
     });
 });
