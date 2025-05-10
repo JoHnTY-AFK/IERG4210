@@ -642,7 +642,7 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
                     console.error('Image resize error:', err);
                     return res.status(500).send('Internal Server Error');
                 }
-                const thumbnailPath = `/Uploads/thumbnail-${req.file.filename}`;
+                const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
                 const sql = 'INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)';
                 db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath], (err) => {
                     if (err) {
@@ -775,8 +775,8 @@ app.post('/send-message', validateCsrfToken, authenticate, async (req, res) => {
         const sanitizedMessage = sanitizeHtml(message);
         const userEmail = req.user.email !== 'Guest' ? req.user.email : null;
         await db.query(
-            'INSERT INTO messages (user_email, message, status) VALUES (?, ?, ?)',
-            [userEmail, sanitizedMessage, 'pending']
+            'INSERT INTO messages (user_email, message, status, seen) VALUES (?, ?, ?, ?)',
+            [userEmail, sanitizedMessage, 'pending', 0]
         );
         res.json({ success: true });
     } catch (err) {
@@ -788,29 +788,23 @@ app.post('/send-message', validateCsrfToken, authenticate, async (req, res) => {
 app.get('/user-messages', authenticate, async (req, res) => {
     try {
         const userEmail = req.user.email !== 'Guest' ? req.user.email : null;
-        const guestId = req.cookies.guestId;
-        let query = 'SELECT * FROM messages WHERE ';
-        let params = [];
-
-        if (userEmail) {
-            query += 'user_email = ?';
-            params.push(userEmail);
-        } else if (guestId) {
-            query += 'user_email IS NULL';
-            // Guest messages are not tied to guestId in this implementation
-        } else {
+        if (!userEmail) {
             return res.json([]);
         }
 
-        const [results] = await db.query(query, params);
+        const [results] = await db.query(
+            'SELECT message_id, user_email, message, response, status, created_at, responded_at, seen FROM messages WHERE user_email = ? ORDER BY created_at ASC',
+            [userEmail]
+        );
         res.json(results.map(row => ({
             message_id: row.message_id,
-            user_email: row.user_email || 'Guest',
+            user_email: escapeHtml(row.user_email || 'Guest'),
             message: escapeHtml(row.message),
             response: row.response ? escapeHtml(row.response) : null,
             status: row.status,
             created_at: row.created_at,
-            responded_at: row.responded_at
+            responded_at: row.responded_at,
+            seen: row.seen
         })));
     } catch (err) {
         console.error('User messages fetch error:', err);
@@ -820,15 +814,20 @@ app.get('/user-messages', authenticate, async (req, res) => {
 
 app.get('/admin-messages', authenticate, isAdmin, async (req, res) => {
     try {
-        const [results] = await db.query('SELECT * FROM messages WHERE status = ? ORDER BY created_at DESC', ['pending']);
+        const filter = req.query.filter === 'responded' ? 'responded' : 'pending';
+        const [results] = await db.query(
+            'SELECT message_id, user_email, message, response, status, created_at, responded_at, seen FROM messages WHERE status = ? ORDER BY created_at DESC',
+            [filter]
+        );
         res.json(results.map(row => ({
             message_id: row.message_id,
-            user_email: row.user_email || 'Guest',
+            user_email: escapeHtml(row.user_email || 'Guest'),
             message: escapeHtml(row.message),
             response: row.response ? escapeHtml(row.response) : null,
             status: row.status,
             created_at: row.created_at,
-            responded_at: row.responded_at
+            responded_at: row.responded_at,
+            seen: row.seen
         })));
     } catch (err) {
         console.error('Admin messages fetch error:', err);
@@ -859,13 +858,67 @@ app.post('/respond-message', validateCsrfToken, authenticate, isAdmin, async (re
         }
 
         await db.query(
-            'UPDATE messages SET response = ?, status = ?, responded_at = NOW() WHERE message_id = ?',
+            'UPDATE messages SET response = ?, status = ?, responded_at = NOW(), seen = 0 WHERE message_id = ?',
             [sanitizedResponse, 'responded', messageId]
         );
         console.log('Message responded:', { messageId, response: sanitizedResponse });
         res.json({ success: true });
     } catch (err) {
         console.error('Respond message error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/mark-messages-seen', validateCsrfToken, authenticate, async (req, res) => {
+    try {
+        const userEmail = req.user.email !== 'Guest' ? req.user.email : null;
+        if (!userEmail) return res.status(403).json({ error: 'Authentication required' });
+
+        await db.query(
+            'UPDATE messages SET seen = 1 WHERE user_email = ? AND response IS NOT NULL',
+            [userEmail]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Mark messages seen error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/bulk-delete-messages', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
+    try {
+        const { messageIds } = req.body;
+        if (!Array.isArray(messageIds) || messageIds.length === 0) {
+            return res.status(400).json({ error: 'Invalid message IDs' });
+        }
+
+        const placeholders = messageIds.map(() => '?').join(',');
+        await db.query(
+            `DELETE FROM messages WHERE message_id IN (${placeholders})`,
+            messageIds
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Bulk delete messages error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/bulk-resolve-messages', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
+    try {
+        const { messageIds } = req.body;
+        if (!Array.isArray(messageIds) || messageIds.length === 0) {
+            return res.status(400).json({ error: 'Invalid message IDs' });
+        }
+
+        const placeholders = messageIds.map(() => '?').join(',');
+        await db.query(
+            `UPDATE messages SET status = ?, responded_at = NOW(), seen = 0 WHERE message_id IN (${placeholders})`,
+            ['responded', ...messageIds]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Bulk resolve messages error:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
