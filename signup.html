@@ -10,17 +10,41 @@
 <body>
     <div class="login-wrapper">
         <div class="login-container">
-            <h1>Create Your Account</h1>
-            <form id="signup-form">
+            <h1 class="signup-title">Create Your Account</h1>
+            <form id="signup-form" class="signup-step" data-step="details">
                 <input type="hidden" name="csrfToken" id="csrfToken">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
+                <div class="form-group">
+                    <input type="text" id="firstName" name="firstName" required placeholder=" ">
+                    <label for="firstName">First Name</label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="lastName" name="lastName" required placeholder=" ">
+                    <label for="lastName">Last Name</label>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="email" name="email" required placeholder=" ">
+                    <label for="email">Email</label>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" name="password" required placeholder=" ">
+                    <label for="password">Password</label>
+                    <div id="password-strength" class="password-strength"></div>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder=" ">
+                    <label for="confirmPassword">Confirm Password</label>
+                </div>
                 <div id="form-error" class="error"></div>
-                <button type="submit">Signup</button>
+                <button type="submit" id="details-submit">Sign Up</button>
             </form>
             <p class="back-link"><a href="/">Back to Home</a> | <a href="/login">Already have an account? Login</a></p>
+        </div>
+    </div>
+    <div id="notification-modal" class="notification-modal">
+        <div class="modal-content">
+            <h2>Signup Successful!</h2>
+            <p>Congrats! You're now part of the Dummy Shopping community.</p>
+            <button id="modal-continue">Continue to Home</button>
         </div>
     </div>
     <div id="chat-box" class="chat-box">
@@ -36,6 +60,10 @@
     <script src="/chat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Ensure form error is hidden by default
+            const errorDiv = document.getElementById('form-error');
+            errorDiv.style.display = 'none';
+
             fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
@@ -43,55 +71,156 @@
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
-            document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            const signupForm = document.getElementById('signup-form');
+            const submitButton = document.getElementById('details-submit');
+            const passwordInput = document.getElementById('password');
+            const passwordStrengthDiv = document.getElementById('password-strength');
+            const notificationModal = document.getElementById('notification-modal');
+            const continueButton = document.getElementById('modal-continue');
+
+            // Initialize label positioning for all inputs
+            document.querySelectorAll('.form-group input').forEach(input => {
+                if (input.value.trim() || document.activeElement === input) {
+                    const label = input.nextElementSibling;
+                    if (label && label.tagName === 'LABEL') {
+                        label.style.top = '0';
+                        label.style.fontSize = '0.8rem';
+                        label.style.color = 'var(--accent-color)';
+                    }
+                }
+            });
+
+            // Password Strength Indicator
+            passwordInput.addEventListener('input', () => {
+                const password = passwordInput.value;
+                let strength = 'weak';
+                if (password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password)) {
+                    strength = 'strong';
+                } else if (password.length >= 8) {
+                    strength = 'medium';
+                }
+                passwordStrengthDiv.textContent = `Password Strength: ${strength.charAt(0).toUpperCase() + strength.slice(1)}`;
+                passwordStrengthDiv.className = `password-strength ${strength}`;
+            });
+
+            signupForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                submitButton.classList.add('loading');
+                submitButton.disabled = true;
+                errorDiv.style.display = 'none'; // Hide error initially
+
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
                 const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value.trim();
-                const errorDiv = document.getElementById('form-error');
+                const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
+                const nameRegex = /^[a-zA-Z\s\-]+$/;
                 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!nameRegex.test(firstName)) {
+                    errorDiv.textContent = 'First name can only contain letters, spaces, or hyphens.';
+                    errorDiv.style.display = 'block';
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
+                    return;
+                }
+                if (!nameRegex.test(lastName)) {
+                    errorDiv.textContent = 'Last name can only contain letters, spaces, or hyphens.';
+                    errorDiv.style.display = 'block';
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
+                    return;
+                }
                 if (!emailRegex.test(email)) {
                     errorDiv.textContent = 'Please enter a valid email address.';
+                    errorDiv.style.display = 'block';
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
                     return;
                 }
                 if (password.length < 8 || password.length > 50) {
                     errorDiv.textContent = 'Password must be between 8 and 50 characters long.';
+                    errorDiv.style.display = 'block';
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
                     return;
                 }
+                if (password !== confirmPassword) {
+                    errorDiv.textContent = 'Passwords do not match.';
+                    errorDiv.style.display = 'block';
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
+                    return;
+                }
+
+                const formData = { firstName, lastName, email, password };
+                console.log('Sending form data:', formData);
 
                 try {
                     const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
                     const csrfData = await csrfResponse.json();
                     document.getElementById('csrfToken').value = csrfData.csrfToken;
 
-                    const signupResponse = await fetch('/signup', {
+                    const response = await fetch('/signup', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password, csrfToken: csrfData.csrfToken }),
+                        body: JSON.stringify({ ...formData, csrfToken: csrfData.csrfToken }),
                         credentials: 'include'
                     });
 
-                    const data = await signupResponse.json();
-                    if (!signupResponse.ok) {
-                        errorDiv.textContent = data.error || 'Signup failed. Please try again.';
+                    const data = await response.json();
+                    if (!response.ok) {
+                        errorDiv.textContent = data.error || 'Failed to sign up.';
+                        errorDiv.style.display = 'block';
                         console.error('Signup failed:', data.error);
                         await fetch('/csrf-token', { credentials: 'include' })
                             .then(res => res.json())
                             .then(data => document.getElementById('csrfToken').value = data.csrfToken);
+                        submitButton.classList.remove('loading');
+                        submitButton.disabled = false;
                         return;
                     }
 
-                    window.location.href = data.redirect || '/';
+                    // Show success popup
+                    notificationModal.classList.add('visible');
+                    continueButton.addEventListener('click', () => {
+                        window.location.href = `/?name=${encodeURIComponent(firstName + ' ' + lastName)}`;
+                    });
                 } catch (err) {
                     console.error('Signup error:', err);
-                    errorDiv.textContent = 'An error occurred during signup. Please try again later.';
+                    errorDiv.textContent = 'An error occurred during signup.';
+                    errorDiv.style.display = 'block';
                     await fetch('/csrf-token', { credentials: 'include' })
                         .then(res => res.json())
                         .then(data => document.getElementById('csrfToken').value = data.csrfToken);
+                    submitButton.classList.remove('loading');
+                    submitButton.disabled = false;
                 }
+            });
+
+            // Handle focus and blur for label positioning
+            document.querySelectorAll('.form-group input').forEach(input => {
+                input.addEventListener('focus', () => {
+                    const label = input.nextElementSibling;
+                    if (label && label.tagName === 'LABEL') {
+                        label.style.top = '0';
+                        label.style.fontSize = '0.8rem';
+                        label.style.color = 'var(--accent-color)';
+                    }
+                });
+                input.addEventListener('blur', () => {
+                    if (!input.value.trim()) {
+                        const label = input.nextElementSibling;
+                        if (label && label.tagName === 'LABEL') {
+                            label.style.top = '50%';
+                            label.style.transform = 'translateY(-50%)';
+                            label.style.fontSize = '1rem';
+                            label.style.color = 'var(--text-color)';
+                        }
+                    }
+                });
             });
         });
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93daa95f2c8d53f8',t:'MTc0Njg5Mjk1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
