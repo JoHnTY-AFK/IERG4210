@@ -24,15 +24,7 @@
                 <label for="confirmPassword">Confirm Password</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm your password">
                 <div id="form-error" class="error"></div>
-                <button type="submit" id="details-submit">Continue</button>
-            </form>
-            <form id="verify-form" class="signup-step" data-step="verify" style="display: none;">
-                <input type="hidden" name="csrfToken" id="verify-csrfToken">
-                <label for="verificationCode">Verification Code</label>
-                <input type="text" id="verificationCode" name="verificationCode" required placeholder="Enter the 6-digit code">
-                <div id="verify-error" class="error"></div>
-                <button type="submit" id="verify-submit">Verify & Signup</button>
-                <button type="button" id="resend-code">Resend Code</button>
+                <button type="submit" id="details-submit">Sign Up</button>
             </form>
             <p class="back-link"><a href="/">Back to Home</a> | <a href="/login">Already have an account? Login</a></p>
         </div>
@@ -54,15 +46,11 @@
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('csrfToken').value = data.csrfToken;
-                    document.getElementById('verify-csrfToken').value = data.csrfToken;
                 })
                 .catch(err => console.error('CSRF fetch error:', err));
 
             const signupForm = document.getElementById('signup-form');
-            const verifyForm = document.getElementById('verify-form');
             const errorDiv = document.getElementById('form-error');
-            const verifyErrorDiv = document.getElementById('verify-error');
-            let formData = {};
 
             signupForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -95,15 +83,15 @@
                     return;
                 }
 
-                formData = { firstName, lastName, email, password };
-                console.log('Sending form data:', formData); // Debug log for sent data
+                const formData = { firstName, lastName, email, password };
+                console.log('Sending form data:', formData);
 
                 try {
                     const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
                     const csrfData = await csrfResponse.json();
                     document.getElementById('csrfToken').value = csrfData.csrfToken;
 
-                    const response = await fetch('/send-verification-code', {
+                    const response = await fetch('/signup', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ ...formData, csrfToken: csrfData.csrfToken }),
@@ -112,95 +100,26 @@
 
                     const data = await response.json();
                     if (!response.ok) {
-                        errorDiv.textContent = data.error || 'Failed to send verification code.';
-                        console.error('Verification failed:', data.error);
+                        errorDiv.textContent = data.error || 'Failed to sign up.';
+                        console.error('Signup failed:', data.error);
                         await fetch('/csrf-token', { credentials: 'include' })
                             .then(res => res.json())
                             .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                         return;
                     }
 
-                    signupForm.style.display = 'none';
-                    verifyForm.style.display = 'block';
-                    errorDiv.textContent = '';
-                } catch (err) {
-                    console.error('Verification error:', err);
-                    errorDiv.textContent = 'An error occurred while sending the verification code.';
-                    await fetch('/csrf-token', { credentials: 'include' })
-                        .then(res => res.json())
-                        .then(data => document.getElementById('csrfToken').value = data.csrfToken);
-                }
-            });
-
-            verifyForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const verificationCode = document.getElementById('verificationCode').value.trim();
-
-                if (!/^\d{6}$/.test(verificationCode)) {
-                    verifyErrorDiv.textContent = 'Verification code must be a 6-digit number.';
-                    return;
-                }
-
-                try {
-                    const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
-                    const csrfData = await csrfResponse.json();
-                    document.getElementById('verify-csrfToken').value = csrfData.csrfToken;
-
-                    const response = await fetch('/verify-code', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...formData, code: verificationCode, csrfToken: csrfData.csrfToken }),
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) {
-                        verifyErrorDiv.textContent = data.error || 'Invalid or expired verification code.';
-                        console.error('Signup failed:', data.error);
-                        await fetch('/csrf-token', { credentials: 'include' })
-                            .then(res => res.json())
-                            .then(data => document.getElementById('verify-csrfToken').value = data.csrfToken);
-                        return;
-                    }
-
                     window.location.href = data.redirect || '/';
                 } catch (err) {
                     console.error('Signup error:', err);
-                    verifyErrorDiv.textContent = 'An error occurred during signup.';
+                    errorDiv.textContent = 'An error occurred during signup.';
                     await fetch('/csrf-token', { credentials: 'include' })
                         .then(res => res.json())
-                        .then(data => document.getElementById('verify-csrfToken').value = data.csrfToken);
-                }
-            });
-
-            document.getElementById('resend-code').addEventListener('click', async () => {
-                try {
-                    const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
-                    const csrfData = await csrfResponse.json();
-                    document.getElementById('verify-csrfToken').value = csrfData.csrfToken;
-
-                    const response = await fetch('/send-verification-code', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...formData, csrfToken: csrfData.csrfToken }),
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) {
-                        verifyErrorDiv.textContent = data.error || 'Failed to resend verification code.';
-                        return;
-                    }
-
-                    verifyErrorDiv.textContent = 'Verification code resent to your email.';
-                } catch (err) {
-                    console.error('Resend code error:', err);
-                    verifyErrorDiv.textContent = 'An error occurred while resending the code.';
+                        .then(data => document.getElementById('csrfToken').value = data.csrfToken);
                 }
             });
         });
     </script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93daa95f2c8d53f8',t:'MTc0Njg5Mjk1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93dae8cedd3b4551',t:'MTc0Njg5NTU1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93db2a96d8804570',t:'MTc0Njg5ODI0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93db2a96d8804570',t:'MTc0Njg5ODI0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93db970bf9b86772',t:'MTc0NjkwMjY4OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

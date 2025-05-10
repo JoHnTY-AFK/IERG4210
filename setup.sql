@@ -71,15 +71,6 @@ CREATE TABLE messages (
     FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE SET NULL
 );
 
--- Create verification_codes table for email verification
-CREATE TABLE verification_codes (
-    code_id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
-    code VARCHAR(6) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NOT NULL
-);
-
 -- Insert initial categories
 INSERT INTO categories (name) VALUES
 ('Hand Cream'),
@@ -128,7 +119,7 @@ INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
 -- Insert initial users (passwords hashed with bcrypt)
 INSERT INTO users (email, firstName, lastName, password, is_admin) VALUES
 ('admin@example.com', 'Admin', 'User', '$2b$10$Ndwr9eo190tkFcXYHrFAaeipj76aGoYtp8gRu9vi1rd7Gd/W8Bhx.', TRUE),
-('user@example.com', 'John', 'Doe', '$2b$10$7pG43mC8YO2Qe7s1fgxFSe3wM1HM16i3.T9HFWzdZk0cF9fg6wPjG', FALSE),
+('user@example.com', 'John', 'Tsoi', '$2b$10$7pG43mC8YO2Qe7s1fgxFSe3wM1HM16i3.T9HFWzdZk0cF9fg6wPjG', FALSE),
 ('testing6070@example.com', 'Test', 'User', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE);
 
 -- Add seen column to messages table

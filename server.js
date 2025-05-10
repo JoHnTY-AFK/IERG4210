@@ -11,7 +11,6 @@ const bcrypt = require('bcrypt');
 const sanitizeHtml = require('sanitize-html');
 const http = require('http');
 const fetch = require('node-fetch');
-const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -40,15 +39,6 @@ db.getConnection()
         console.error('Database connection failed:', err);
         process.exit(1);
     });
-
-// Nodemailer setup
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASS || 'your-app-password'
-    }
-});
 
 // Middleware
 app.use(cors({
@@ -408,153 +398,6 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
     } catch (err) {
         console.error('Error fetching admin orders:', err);
         res.status(500).json({ error: 'Error fetching orders' });
-    }
-});
-
-app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
-    try {
-        console.log('Raw request body:', req.body);
-        const { email, firstName, lastName, password } = req.body;
-
-        // Validate input
-        const emailError = validateEmail(email);
-        const firstNameError = validateName(firstName, 'First Name');
-        const lastNameError = validateName(lastName, 'Last Name');
-        const passwordError = validatePassword(password);
-        if (emailError || firstNameError || lastNameError || passwordError) {
-            return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
-        }
-
-        // Check if email already exists
-        const [existing] = await db.query('SELECT email FROM users WHERE email = ?', [email]);
-        if (existing.length > 0) {
-            return res.status(400).json({ error: 'Email already registered' });
-        }
-
-        // Generate verification code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-        // Delete any existing verification codes for this email
-        await db.query('DELETE FROM verification_codes WHERE email = ?', [email]);
-
-        // Insert new verification code
-        await db.query(
-            'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
-            [email, code, expiresAt]
-        );
-        console.log('Verification code inserted for email:', email);
-
-        // Send email
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Verify Your Email - Dummy Shopping Website',
-            text: `Your verification code is: ${code}. It expires in 10 minutes.`
-        };
-
-        try {
-            const info = await transporter.sendMail(mailOptions);
-            console.log('Email sent successfully:', info.messageId);
-            res.json({ success: true });
-        } catch (emailErr) {
-            console.error('Email sending failed:', emailErr);
-            // Rollback the verification code insertion
-            await db.query('DELETE FROM verification_codes WHERE email = ?', [email]);
-            return res.status(500).json({ error: `Failed to send verification email: ${emailErr.message}` });
-        }
-    } catch (err) {
-        console.error('Send verification code error:', err);
-        res.status(500).json({ error: `Internal server error: ${err.message}` });
-    }
-});
-
-// Debugging endpoint to test email sending
-app.post('/test-email', validateCsrfToken, async (req, res) => {
-    try {
-        const { email } = req.body;
-        const emailError = validateEmail(email);
-        if (emailError) {
-            return res.status(400).json({ error: emailError });
-        }
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Test Email - Dummy Shopping Website',
-            text: 'This is a test email to verify email configuration.'
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Test email sent successfully:', info.messageId);
-        res.json({ success: true, message: 'Test email sent' });
-    } catch (err) {
-        console.error('Test email error:', err);
-        res.status(500).json({ error: `Failed to send test email: ${err.message}` });
-    }
-});
-
-app.post('/verify-code', validateCsrfToken, async (req, res) => {
-    try {
-        const { email, code, firstName, lastName, password } = req.body;
-        console.log('Verify code attempt:', { email, code });
-
-        // Validate inputs
-        const emailError = validateEmail(email);
-        const firstNameError = validateName(firstName, 'First Name');
-        const lastNameError = validateName(lastName, 'Last Name');
-        const passwordError = validatePassword(password);
-        if (emailError || firstNameError || lastNameError || passwordError) {
-            return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
-        }
-
-        // Check verification code
-        const [codes] = await db.query(
-            'SELECT * FROM verification_codes WHERE email = ? AND code = ? AND expires_at > NOW()',
-            [email, code]
-        );
-        if (codes.length === 0) {
-            return res.status(400).json({ error: 'Invalid or expired verification code' });
-        }
-
-        // Check if email already exists
-        const [existing] = await db.query('SELECT email FROM users WHERE email = ?', [email]);
-        if (existing.length > 0) {
-            return res.status(400).json({ error: 'Email already registered' });
-        }
-
-        // Insert user
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const authToken = crypto.randomBytes(32).toString('hex');
-        const sanitizedEmail = escapeHtml(email);
-        const sanitizedFirstName = escapeHtml(firstName);
-        const sanitizedLastName = escapeHtml(lastName);
-
-        await db.query(
-            'INSERT INTO users (email, firstName, lastName, password, auth_token, is_admin) VALUES (?, ?, ?, ?, ?, ?)',
-            [sanitizedEmail, sanitizedFirstName, sanitizedLastName, hashedPassword, authToken, 0]
-        );
-
-        // Delete verification code
-        await db.query('DELETE FROM verification_codes WHERE email = ?', [email]);
-
-        console.log('Setting authToken cookie for:', req.hostname);
-        res.cookie('authToken', authToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
-            maxAge: 2 * 24 * 60 * 60 * 1000,
-            path: '/'
-        });
-
-        res.json({ 
-            success: true,
-            redirect: '/',
-            email: sanitizedEmail
-        });
-    } catch (err) {
-        console.error('Verify code error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
