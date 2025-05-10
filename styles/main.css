@@ -610,6 +610,8 @@ header nav ul li a:hover {
 .login-container input[type="email"],
 .login-container input[type="password"],
 .login-container input[type="text"],
+.login-container input#firstName,
+.login-container input#lastName,
 .login-container input[type="hidden"] {
   width: calc(100% - 2rem);
   padding: 12px 16px;
@@ -633,14 +635,18 @@ header nav ul li a:hover {
 
 .login-container input[type="email"]:hover,
 .login-container input[type="password"]:hover,
-.login-container input[type="text"]:hover {
+.login-container input[type="text"]:hover,
+.login-container input#firstName:hover,
+.login-container input#lastName:hover {
   border-color: var(--accent-color);
   box-shadow: 0 0 10px var(--glow-color);
 }
 
 .login-container input[type="email"]:focus,
 .login-container input[type="password"]:focus,
-.login-container input[type="text"]:focus {
+.login-container input[type="text"]:focus,
+.login-container input#firstName:focus,
+.login-container input#lastName:focus {
   border-color: var(--accent-color);
   box-shadow: 0 0 8px var(--glow-color);
   outline: none;
@@ -655,23 +661,21 @@ header nav ul li a:hover {
   opacity: 0; /* Hide placeholder when using floating labels */
 }
 
-.login-container button[type="submit"] {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
-  color: var(--text-color);
-  border: none;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 0 10px var(--glow-color);
+/* Form Error */
+#form-error {
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.9em;
+  background: rgba(255, 75, 43, 0.2);
+  color: #FF4B2B;
+  display: none; /* Ensure it's hidden by default */
+  animation: shake 0.5s ease;
 }
 
-.login-container button[type="submit"]:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 15px var(--glow-color);
+#form-error.visible {
+  display: block;
 }
 
 /* Password Strength Indicator */
@@ -730,23 +734,6 @@ header nav ul li a:hover {
   animation: spin 1s linear infinite;
   margin-left: 10px;
   vertical-align: middle;
-}
-
-/* Form Error */
-#form-error {
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 10px;
-  text-align: center;
-  font-size: 0.9em;
-  background: rgba(255, 75, 43, 0.2);
-  color: #FF4B2B;
-  display: none; /* Ensure it's hidden by default */
-  animation: shake 0.5s ease;
-}
-
-#form-error.visible {
-  display: block;
 }
 
 .back-link {
