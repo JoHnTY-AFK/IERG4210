@@ -556,7 +556,7 @@ header nav ul li a:hover {
   top: 50%;
   left: 16px;
   transform: translateY(-50%);
-  color: var(--text-color);
+  color: rgba(230, 230, 250, 0.5); /* Match placeholder color */
   font-weight: 600;
   font-size: 1rem;
   pointer-events: none;
@@ -570,6 +570,7 @@ header nav ul li a:hover {
   top: 0;
   font-size: 0.8rem;
   color: var(--accent-color);
+  transform: translateY(0); /* Ensure label moves fully up */
 }
 
 .login-container input[type="email"],
@@ -605,6 +606,7 @@ header nav ul li a:hover {
 .signup-container input[type="email"]::placeholder,
 .signup-container input[type="password"]::placeholder {
   color: rgba(230, 230, 250, 0.5);
+  opacity: 0; /* Hide placeholder to rely on label */
 }
 
 .login-container button[type="submit"],
