@@ -116,6 +116,26 @@ header nav ul li a:hover {
   text-decoration: underline;
 }
 
+/* Welcome Message on Index Page */
+.welcome-message {
+  text-align: center;
+  padding: 15px 30px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  font-size: 1.2em;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--card-border);
+  animation: fadeIn 0.5s ease;
+}
+
+.welcome-message span {
+  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+}
+
 /* Category Select */
 .category-select {
   padding: 15px 30px;
@@ -536,6 +556,21 @@ header nav ul li a:hover {
   width: 100%;
   max-width: 400px;
   animation: fadeIn 0.5s ease;
+  position: relative;
+  overflow: hidden;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+  animation: rotateGradient 15s linear infinite;
+  z-index: -1;
 }
 
 .login-container h1 {
@@ -546,18 +581,39 @@ header nav ul li a:hover {
   font-size: 1.8rem;
 }
 
+.login-container h1.signup-title {
+  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 5px var(--glow-color);
+}
+
+/* Floating Label Effect for Login and Signup Forms */
+.login-container .form-group {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
 .login-container label {
-  display: block;
-  margin-bottom: 0.5rem;
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
   color: var(--text-color);
   font-weight: 600;
+  font-size: 1rem;
+  pointer-events: none;
+  transition: var(--transition);
 }
 
 .login-container input[type="email"],
-.login-container input[type="password"] {
+.login-container input[type="password"],
+.login-container input[type="text"],
+.login-container input[type="hidden"] {
   width: calc(100% - 2rem);
   padding: 12px 16px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   border: 1px solid var(--card-border);
   border-radius: 10px;
   font-size: 1rem;
@@ -567,16 +623,36 @@ header nav ul li a:hover {
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
+.login-container input:focus + label,
+.login-container input:not(:placeholder-shown) + label {
+  top: 0;
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  text-shadow: 0 0 3px var(--glow-color);
+}
+
+.login-container input[type="email"]:hover,
+.login-container input[type="password"]:hover,
+.login-container input[type="text"]:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 10px var(--glow-color);
+}
+
 .login-container input[type="email"]:focus,
-.login-container input[type="password"]:focus {
+.login-container input[type="password"]:focus,
+.login-container input[type="text"]:focus {
   border-color: var(--accent-color);
   box-shadow: 0 0 8px var(--glow-color);
   outline: none;
 }
 
 .login-container input[type="email"]::placeholder,
-.login-container input[type="password"]::placeholder {
+.login-container input[type="password"]::placeholder,
+.login-container input[type="text"]::placeholder,
+.login-container input#firstName::placeholder,
+.login-container input#lastName::placeholder {
   color: rgba(230, 230, 250, 0.5);
+  opacity: 0; /* Hide placeholder when using floating labels */
 }
 
 .login-container button[type="submit"] {
@@ -598,241 +674,12 @@ header nav ul li a:hover {
   box-shadow: 0 0 15px var(--glow-color);
 }
 
-/* Signup Page */
-.signup-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.signup-container {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  padding: 2.5rem;
-  border-radius: 15px;
-  border: 1px solid var(--card-border);
-  box-shadow: var(--shadow);
-  width: 100%;
-  max-width: 400px;
-  animation: fadeIn 0.5s ease;
-}
-
-.signup-container h1 {
-  font-family: 'Orbitron', sans-serif;
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--text-color);
-  font-size: 1.8rem;
-}
-
-.form-group {
-  position: relative;
-  margin-bottom: 1rem;
-}
-
-.signup-container input[type="text"],
-.signup-container input[type="email"],
-.signup-container input[type="password"] {
-  width: calc(100% - 2rem);
-  padding: 12px 16px;
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  font-size: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-color);
-  transition: var(--transition);
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-}
-
-.signup-container input[type="text"]:focus,
-.signup-container input[type="email"]:focus,
-.signup-container input[type="password"]:focus {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 8px var(--glow-color);
-  outline: none;
-}
-
-.signup-container input[type="text"]::placeholder,
-.signup-container input[type="email"]::placeholder,
-.signup-container input[type="password"]::placeholder {
-  color: rgba(230, 230, 250, 0.5);
-}
-
-.signup-container label {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1rem;
-  color: var(--text-color);
-  font-weight: 600;
-  pointer-events: none;
-  transition: all 0.2s ease;
-}
-
-.signup-container input:focus + label,
-.signup-container input:not(:placeholder-shown) + label {
-  top: 0;
-  font-size: 0.8rem;
-  color: var(--accent-color);
-}
-
-.signup-container button#details-submit {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
-  color: var(--text-color);
-  border: none;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 0 10px var(--glow-color);
-}
-
-.signup-container button#details-submit:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 15px var(--glow-color);
-}
-
-.signup-container button#details-submit.loading {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.password-strength {
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  text-align: left;
-}
-
-.password-strength.weak {
-  color: #ff4d4d;
-}
-
-.password-strength.medium {
-  color: #ffa500;
-}
-
-.password-strength.strong {
-  color: #4caf50;
-}
-
-.error {
-  color: #ff4d4d;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  display: none;
-}
-
-.error.visible {
-  display: block;
-}
-
-.notification-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.notification-modal.visible {
-  display: flex;
-}
-
-.modal-content {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  padding: 20px;
-  border-radius: 15px;
-  border: 1px solid var(--card-border);
-  box-shadow: var(--shadow);
-  text-align: center;
-  max-width: 400px;
-  width: 90%;
-  animation: fadeIn 0.5s ease;
-}
-
-.modal-content h2 {
-  font-family: 'Orbitron', sans-serif;
-  color: var(--text-color);
-  margin-bottom: 10px;
-  font-size: 1.5rem;
-}
-
-.modal-content p {
-  color: var(--text-color);
-  margin-bottom: 20px;
-  font-size: 1rem;
-}
-
-.modal-content button#modal-continue {
-  padding: 10px 20px;
-  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
-  color: var(--text-color);
-  border: none;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 0 10px var(--glow-color);
-}
-
-.modal-content button#modal-continue:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 15px var(--glow-color);
-}
-
-.back-link {
-  text-align: center;
-  margin-top: 1rem;
-  font-size: 0.9rem;
-}
-
-.back-link a {
-  color: var(--accent-color);
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.back-link a:hover {
-  text-decoration: underline;
-}
-
-/* Responsive Design */
-@media (max-width: 600px) {
-  .signup-container {
-    padding: 1.5rem;
-    max-width: 90%;
-  }
-
-  .signup-container h1 {
-    font-size: 1.5rem;
-  }
-
-  .modal-content {
-    padding: 15px;
-    max-width: 80%;
-  }
-}
-
 /* Password Strength Indicator */
 .password-strength {
-  font-size: 0.9em;
   margin-top: 5px;
+  font-size: 0.8em;
+  color: var(--text-color);
   text-align: left;
-  transition: var(--transition);
 }
 
 .password-strength.weak {
@@ -845,6 +692,84 @@ header nav ul li a:hover {
 
 .password-strength.strong {
   color: var(--accent-color);
+}
+
+/* Signup Form Specific Styles */
+#signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Increased gap for better readability */
+}
+
+/* Validation Feedback */
+#signup-form input:invalid:not(:placeholder-shown),
+#login-form input:invalid:not(:placeholder-shown) {
+  border-color: #FF4B2B;
+  box-shadow: 0 0 8px rgba(255, 75, 43, 0.5);
+}
+
+#signup-form input:valid:not(:placeholder-shown),
+#login-form input:valid:not(:placeholder-shown) {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 8px var(--glow-color);
+}
+
+#signup-form button[type="submit"] {
+  position: relative;
+  overflow: hidden;
+}
+
+#signup-form button[type="submit"].loading::after {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--text-color);
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+/* Form Error */
+#form-error {
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.9em;
+  background: rgba(255, 75, 43, 0.2);
+  color: #FF4B2B;
+  display: none; /* Ensure it's hidden by default */
+  animation: shake 0.5s ease;
+}
+
+#form-error.visible {
+  display: block;
+}
+
+.back-link {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.back-link a {
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 0.9em;
+  font-weight: 600;
+  transition: var(--transition);
+  margin: 0 5px;
+  padding: 5px 10px;
+  border-radius: 15px;
+}
+
+.back-link a:hover {
+  color: var(--accent-color);
+  background: rgba(0, 212, 255, 0.1);
+  text-shadow: 0 0 5px var(--glow-color);
+  text-decoration: none;
 }
 
 /* Pagination Styles */
@@ -1367,6 +1292,25 @@ footer p {
     box-shadow: 0 0 8px var(--glow-color);
 }
 
+/* Animations for Futuristic Effect */
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 10px var(--glow-color); }
+  50% { box-shadow: 0 0 20px var(--glow-color), 0 0 30px rgba(110, 68, 255, 0.3); }
+  100% { box-shadow: 0 0 10px var(--glow-color); }
+}
+
+@keyframes rotateGradient {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-20px); }
@@ -1456,12 +1400,12 @@ footer p {
     margin-left: 0;
   }
 
-  .login-container, .signup-container {
+  .login-container {
     padding: 1.5rem;
     margin: 1rem;
   }
 
-  .login-container h1, .signup-container h1 {
+  .login-container h1 {
     font-size: 1.5rem;
   }
 
