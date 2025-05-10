@@ -60,7 +60,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let currentPage = 1;
-            let totalPages = 1;
             const ordersPerPage = 5;
 
             fetch('/csrf-token', { credentials: 'include' })
@@ -138,35 +137,22 @@
                 try {
                     const response = await fetch(`/orders-data?page=${page}`, { credentials: 'include' });
                     if (!response.ok) {
-                        if (response.status === 401) {
+                        if (response.status === 401 || response.status === 403) {
                             window.location.href = '/login';
                         }
                         throw new Error(`Failed to fetch orders: ${response.statusText}`);
                     }
                     const data = await response.json();
-                    console.log('API Response for page', page, ':', data); // Enhanced logging
+                    console.log('API Response for page', page, ':', data);
 
                     const orderList = document.getElementById('order-list');
                     orderList.innerHTML = '';
 
-                    let orders = [];
-                    let total = 0;
-
-                    if (Array.isArray(data)) {
-                        orders = data;
-                        total = data.length; // Fallback if total is missing
-                        console.log('Using array length as total:', total);
-                    } else if (data.orders && typeof data.total === 'number') {
-                        orders = data.orders;
-                        total = data.total;
-                        console.log('Using provided total:', total);
-                    } else {
-                        throw new Error('Unexpected API response format: ', data);
-                    }
+                    const orders = data.orders || [];
+                    const totalPages = data.totalPages || 1;
 
                     if (orders.length === 0) {
                         orderList.innerHTML = '<li>No recent orders found.</li>';
-                        totalPages = 1;
                     } else {
                         orders.forEach(order => {
                             const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
@@ -175,16 +161,13 @@
                             orderItem.className = `order-item status-${order.status.toLowerCase()}`;
                             orderItem.innerHTML = DOMPurify.sanitize(`
                                 <p><strong>Order ID:</strong> ${order.order_id}</p>
-                                <p><strong>Total:</strong> $${order.total_amount}</p>
+                                <p><strong>Total:</strong> $${order.total_price}</p>
                                 <p><strong>Status:</strong> <span class="status-${order.status.toLowerCase()}">${order.status}</span></p>
                                 <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
                                 <ul class="order-items">${itemList}</ul>
                             `);
                             orderList.appendChild(orderItem);
                         });
-
-                        totalPages = Math.ceil(total / ordersPerPage);
-                        console.log('Calculated totalPages:', totalPages);
                     }
 
                     const prevButton = document.getElementById('prev-page');
@@ -193,7 +176,8 @@
                     
                     pageInfo.textContent = `Page ${page} of ${totalPages}`;
                     prevButton.disabled = page === 1;
-                    nextButton.disabled = page === totalPages || totalPages === 1;
+                    nextButton.disabled = page >= totalPages;
+                    currentPage = page;
                 } catch (err) {
                     console.error('Orders fetch error:', err);
                     document.getElementById('order-list').innerHTML = '<li>Error loading orders: ' + err.message + '</li>';
@@ -202,20 +186,16 @@
 
             document.getElementById('prev-page').addEventListener('click', () => {
                 if (currentPage > 1) {
-                    currentPage--;
-                    fetchOrders(currentPage);
+                    fetchOrders(currentPage - 1);
                 }
             });
 
             document.getElementById('next-page').addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    fetchOrders(currentPage);
-                }
+                fetchOrders(currentPage + 1);
             });
 
             fetchOrders(currentPage);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d206409f11b04c',t:'MTc0NjgwMjM4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d2bde8fbb6b0dc',t:'MTc0NjgwOTkwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

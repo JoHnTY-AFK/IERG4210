@@ -311,25 +311,27 @@ app.get('/orders', authenticate, (req, res) => {
 });
 
 app.get('/orders-data', authenticate, async (req, res) => {
-    if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.user || !req.user.email || req.user.email === 'Guest') {
+        return res.status(403).json({ error: 'Authentication required' });
     }
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    const offset = (page - 1) * limit;
     try {
         const [orders] = await db.query(
-            'SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC LIMIT 5',
+            'SELECT orderID AS order_id, total_price, status, created_at, items FROM orders WHERE user_email = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            [req.user.email, limit, offset]
+        );
+        const [totalResult] = await db.query(
+            'SELECT COUNT(*) as total FROM orders WHERE user_email = ?',
             [req.user.email]
         );
-        res.json(orders.map(order => ({
-            order_id: order.orderID,
-            email: order.user_email,
-            total_amount: order.total_price,
-            items: order.items,
-            status: order.status,
-            created_at: order.created_at
-        })));
-    } catch (err) {
-        console.error('Error fetching orders:', err);
-        res.status(500).json({ error: 'Error fetching orders' });
+        const totalOrders = totalResult[0].total;
+        const totalPages = Math.ceil(totalOrders / limit);
+        res.json({ orders, totalPages });
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: 'Failed to fetch orders' });
     }
 });
 
@@ -818,7 +820,7 @@ app.get('/user-messages', authenticate, async (req, res) => {
 
 app.get('/admin-messages', authenticate, isAdmin, async (req, res) => {
     try {
-        const [results] = await db.query('SELECT * FROM messages ORDER BY created_at DESC');
+        const [results] = await db.query('SELECT * FROM messages WHERE status = ? ORDER BY created_at DESC', ['pending']);
         res.json(results.map(row => ({
             message_id: row.message_id,
             user_email: row.user_email || 'Guest',
@@ -836,15 +838,23 @@ app.get('/admin-messages', authenticate, isAdmin, async (req, res) => {
 
 app.post('/respond-message', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
     try {
-        const { message_id, response } = req.body;
-        const responseError = validateTextInput(response, 1000, 'Response');
-        if (responseError) return res.status(400).json({ error: responseError });
-        if (!message_id) return res.status(400).json({ error: 'Message ID is required' });
+        const { messageId, response } = req.body;
+        if (!messageId || !response) {
+            return res.status(400).json({ error: 'Message ID and response are required' });
+        }
+
+        const messageError = validateTextInput(response, 1000, 'Response');
+        if (messageError) return res.status(400).json({ error: messageError });
 
         const sanitizedResponse = sanitizeHtml(response);
+        const [messages] = await db.query('SELECT * FROM messages WHERE message_id = ?', [messageId]);
+        if (messages.length === 0) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
         await db.query(
             'UPDATE messages SET response = ?, status = ?, responded_at = NOW() WHERE message_id = ?',
-            [sanitizedResponse, 'responded', message_id]
+            [sanitizedResponse, 'responded', messageId]
         );
         res.json({ success: true });
     } catch (err) {
