@@ -1,300 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
-   <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Dummy Shopping Website</title>
-      <link rel="stylesheet" href="/styles/main.css">
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-      <style>
-         .loading {
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dummy Shopping Website</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+    <style>
+        .welcome-message {
             display: none;
-            text-align: center;
-            padding: 20px;
-            font-size: 16px;
-            color: #555;
-         }
-         .loading.visible {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow);
+            color: var(--text-color);
+            font-size: 1em;
+            font-weight: 600;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease;
+        }
+        .welcome-message.visible {
             display: block;
-         }
-      </style>
-   </head>
-   <body>
-      <header>
-         <h1>Dummy Shopping Website</h1>
-         <nav>
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        .welcome-message.fade-out {
+            animation: fadeOut 0.5s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Dummy Shopping Website</h1>
+        <nav>
             <ul>
-               <li><a href="/">Home</a></li>
-               <li><a href="#">Categories</a></li>
-               <li><a href="#">About</a></li>
-               <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
-               <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
-               <li>
-                  <form id="logout-form" method="POST" action="/logout"><button type="submit" id="logout-link" style="display: none;">Logout</button></form>
-               </li>
+                <li><a href="/">Home</a></li>
+                <li><a href="#">Categories</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="/admin" id="admin-link" style="display: none;">Admin</a></li>
+                <li><a href="/orders" id="orders-link" style="display: none;">My Orders</a></li>
+                <li>
+                    <form id="logout-form" method="POST" action="/logout">
+                        <button type="submit" id="logout-link" style="display: none;">Logout</button>
+                    </form>
+                </li>
             </ul>
-         </nav>
-         <button id="user-status" class="user-status">Guest</button>
-         <button id="cart-button" class="cart-button">Cart (0)</button>
-      </header>
-      <section id="welcome-message" class="welcome-message" style="display: none;">
-         <p>Welcome, <span id="user-name"></span>!</p>
-      </section>
-      <section class="breadcrumb">
-         <p><a href="/">Home</a> > <span id="breadcrumb-category">All Categories</span></p>
-      </section>
-      <section class="category-select">
-         <label for="category-select">Select Category:</label>
-         <select id="category-select">
+        </nav>
+        <button id="user-status" class="user-status">Guest</button>
+        <button id="cart-button" class="cart-button">Cart (0)</button>
+    </header>
+    <section id="welcome-message" class="welcome-message">
+        <p>Welcome, <span id="user-name"></span>!</p>
+    </section>
+    <section class="breadcrumb">
+        <p><a href="/">Home</a> > <span id="breadcrumb-category">All Categories</span></p>
+    </section>
+    <section class="category-select">
+        <label for="category-select">Select Category:</label>
+        <select id="category-select">
             <option value="">-- Select a Category --</option>
-         </select>
-      </section>
-      <section class="product-list" id="product-list">
-         <div class="loading" id="loading">Loading more products...</div>
-      </section>
-      <div id="shopping-cart" class="shopping-cart">
-         <button class="close-cart">×</button>
-         <h3>Shopping Cart</h3>
-         <ul class="cart-items"></ul>
-      </div>
-      <div id="chat-box" class="chat-box">
-         <button id="close-chat" class="close-chat">×</button>
-         <h3>Customer Support</h3>
-         <div id="chat-messages" class="chat-messages"></div>
-         <div class="chat-input">
+        </select>
+    </section>
+    <section class="product-list" id="product-list">
+        <div class="loading" id="loading">Loading more products...</div>
+    </section>
+    <div id="shopping-cart" class="shopping-cart">
+        <button class="close-cart">×</button>
+        <h3>Shopping Cart</h3>
+        <ul class="cart-items"></ul>
+    </div>
+    <div id="chat-box" class="chat-box">
+        <button id="close-chat" class="close-chat">×</button>
+        <h3>Customer Support</h3>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input">
             <textarea id="chat-input" placeholder="Type your message..."></textarea>
             <button id="send-message">Send</button>
-         </div>
-      </div>
-      <button id="chat-button" class="chat-button">Chat with Us</button>
-      <footer>
-         <p>© 2025 Dummy Shopping Website</p>
-      </footer>
-      <script src="/cart.js"></script>
-      <script src="/chat.js"></script>
-      <script>
-         document.addEventListener('DOMContentLoaded', () => {
-             let currentPage = 1;
-             let isLoading = false;
-             let hasMore = true;
-             let currentCatid = null;
+        </div>
+    </div>
+    <button id="chat-button" class="chat-button">Chat with Us</button>
+    <footer>
+        <p>© 2025 Dummy Shopping Website</p>
+    </footer>
+    <script src="/cart.js"></script>
+    <script src="/chat.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let currentPage = 1;
+            let isLoading = false;
+            let hasMore = true;
+            let currentCatid = null;
 
-             // Display Welcome Message if Name is Provided
-             const urlParams = new URLSearchParams(window.location.search);
-             const userName = urlParams.get('name');
-             if (userName) {
-                 const welcomeSection = document.getElementById('welcome-message');
-                 const userNameSpan = document.getElementById('user-name');
-                 userNameSpan.textContent = DOMPurify.sanitize(userName);
-                 welcomeSection.style.display = 'block';
-             }
+            // Display Welcome Message
+            function showWelcomeMessage(name) {
+                const welcomeSection = document.getElementById('welcome-message');
+                const userNameSpan = document.getElementById('user-name');
+                userNameSpan.textContent = DOMPurify.sanitize(name);
+                welcomeSection.classList.add('visible');
+                setTimeout(() => {
+                    welcomeSection.classList.add('fade-out');
+                    setTimeout(() => {
+                        welcomeSection.classList.remove('visible', 'fade-out');
+                    }, 500);
+                }, 5000);
+            }
 
-             fetch('/csrf-token', { credentials: 'include' })
-                 .then(res => res.json())
-                 .then(data => {
-                     const logoutForm = document.getElementById('logout-form');
-                     logoutForm.insertAdjacentHTML('afterbegin', `<input type="hidden" name="csrfToken" value="${data.csrfToken}">`);
-                     
-                     logoutForm.addEventListener('submit', async (e) => {
-                         e.preventDefault();
-                         const button = logoutForm.querySelector('button[type="submit"]');
-                         button.disabled = true;
-                         
-                         try {
-                             const response = await fetch('/logout', {
-                                 method: 'POST',
-                                 headers: {
-                                     'Content-Type': 'application/json',
-                                     'X-CSRF-Token': data.csrfToken
-                                 },
-                                 credentials: 'include'
-                             });
-                             
-                             if (!response.ok) throw new Error('Logout failed');
-                             
-                             const result = await response.json();
-                             if (result.csrfToken) {
-                                 document.querySelector('#logout-form input[name="csrfToken"]').value = result.csrfToken;
-                             }
-                             window.location.href = result.redirect || '/login';
-                         } catch (err) {
-                             console.error('Logout error:', err);
-                             fetch('/csrf-token', { credentials: 'include' })
-                                 .then(res => res.json())
-                                 .then(data => {
-                                     document.querySelector('#logout-form input[name="csrfToken"]').value = data.csrfToken;
-                                     window.location.href = '/login';
-                                 });
-                         } finally {
-                             button.disabled = false;
-                         }
-                     });
-                 })
-                 .catch(err => console.error('CSRF fetch error:', err));
-         
-             fetch('/user', { credentials: 'include' })
-                 .then(res => res.json())
-                 .then(data => {
-                     const userStatus = document.getElementById('user-status');
-                     const logoutLink = document.getElementById('logout-link');
-                     const adminLink = document.getElementById('admin-link');
-                     const ordersLink = document.getElementById('orders-link');
-                     
-                     if (data.email !== 'Guest') {
-                         userStatus.textContent = 'Logout';
-                         logoutLink.style.display = 'inline';
-                         userStatus.style.display = 'none';
-                         ordersLink.style.display = 'inline';
-                         
-                         if (data.isAdmin && adminLink) {
-                             adminLink.style.display = 'inline';
-                         } else if (adminLink) {
-                             adminLink.style.display = 'none';
-                         }
-                     } else {
-                         userStatus.textContent = 'Login';
-                         userStatus.style.display = 'inline';
-                         logoutLink.style.display = 'none';
-                         ordersLink.style.display = 'none';
-                         if (adminLink) {
-                             adminLink.style.display = 'none';
-                         }
-                         userStatus.onclick = () => window.location.href = '/login';
-                     }
-                 })
-                 .catch(err => console.error('User fetch error:', err));
-         
-             if (document.getElementById('category-select')) {
-                 fetch('/categories')
-                     .then(response => {
-                         if (!response.ok) throw new Error('Categories fetch failed');
-                         return response.json();
-                     })
-                     .then(categories => {
-                         const categorySelect = document.getElementById('category-select');
-                         categories.forEach(category => {
-                             const option = document.createElement('option');
-                             option.value = category.catid;
-                             option.textContent = category.name;
-                             categorySelect.appendChild(option);
-                         });
-         
-                         const urlParams = new URLSearchParams(window.location.search);
-                         const catid = urlParams.get('catid');
-                         if (catid) {
-                             categorySelect.value = catid;
-                             currentCatid = catid;
-                             loadProducts(catid);
-                             document.getElementById('breadcrumb-category').textContent = categorySelect.options[categorySelect.selectedIndex].text;
-                         } else {
-                             loadProducts();
-                         }
-                     })
-                     .catch(err => console.error('Categories error:', err));
-             }
-         
-             function showLoading() {
-                 document.getElementById('loading').classList.add('visible');
-             }
-         
-             function hideLoading() {
-                 document.getElementById('loading').classList.remove('visible');
-             }
-         
-             function loadProducts(catid = null, reset = false) {
-                 if (isLoading || (!hasMore && !reset)) return;
-                 isLoading = true;
-                 showLoading();
-         
-                 if (reset) {
-                     currentPage = 1;
-                     hasMore = true;
-                     document.getElementById('product-list').innerHTML = '<div class="loading" id="loading">Loading more products...</div>';
-                 }
-         
-                 const url = catid ? `/products/${catid}?page=${currentPage}&limit=8` : `/products?page=${currentPage}&limit=8`;
-                 console.log(`Fetching products: ${url}`);
-                 const startTime = Date.now();
-                 fetch(url)
-                     .then(response => {
-                         if (!response.ok) {
-                             console.error(`Fetch failed for ${url}: ${response.status} ${response.statusText}`);
-                             throw new Error('Products fetch failed');
-                         }
-                         return response.json();
-                     })
-                     .then(data => {
-                         console.log(`Received products for catid=${catid || 'all'}:`, data);
-                         const productList = document.getElementById('product-list');
-                         const products = data.products;
-                         hasMore = currentPage < data.pagination.totalPages;
-                         currentPage++;
-         
-                         products.forEach(product => {
-                             const productDiv = document.createElement('div');
-                             productDiv.className = 'product';
-                             const imageSrc = product.thumbnail || `/images/product${product.pid}.jpg`;
-                             productDiv.innerHTML = DOMPurify.sanitize(`
-                                 <a href="/product?pid=${product.pid}">
-                                     <img src="${imageSrc}" alt="${product.name}" class="thumbnail" loading="lazy"
-                                          onerror="this.src='/images/fallback.jpg'; console.error('Failed to load image: ${imageSrc}');">
-                                     <h3>${product.name}</h3>
-                                 </a>
-                                 <p>$${product.price}</p>
-                                 <button class="add-to-cart" data-pid="${product.pid}" data-name="${product.name}" data-price="${product.price}">Add to Cart</button>
-                             `);
-                             productList.insertBefore(productDiv, document.getElementById('loading'));
-                         });
-         
-                         if (!hasMore) {
-                             hideLoading();
-                             const noMore = document.createElement('div');
-                             noMore.className = 'no-more';
-                             noMore.textContent = 'No more products to load';
-                             productList.insertBefore(noMore, document.getElementById('loading'));
-                         }
-                     })
-                     .catch(err => {
-                         console.error('Products error:', err);
-                         document.getElementById('product-list').innerHTML = '<p>Error loading products</p>';
-                     })
-                     .finally(() => {
-                         const elapsed = Date.now() - startTime;
-                         const remainingTime = Math.max(0, 500 - elapsed);
-                         setTimeout(() => {
-                             isLoading = false;
-                             if (hasMore) hideLoading();
-                         }, remainingTime);
-                     });
-             }
-         
-             function handleScroll() {
-                 const productList = document.getElementById('product-list');
-                 const rect = productList.getBoundingClientRect();
-                 const isBottom = rect.bottom <= window.innerHeight + 100;
-                 if (isBottom && !isLoading && hasMore) {
-                     loadProducts(currentCatid);
-                 }
-             }
-         
-             document.getElementById('category-select').addEventListener('change', (e) => {
-                 const newCatid = e.target.value;
-                 console.log(`Category selected: ${newCatid}`);
-                 currentCatid = newCatid;
-                 if (currentCatid) {
-                     history.pushState({}, '', `?catid=${currentCatid}`);
-                     loadProducts(currentCatid, true);
-                     document.getElementById('breadcrumb-category').textContent = e.target.options[e.target.selectedIndex].text;
-                 } else {
-                     history.pushState({}, '', '/');
-                     loadProducts(null, true);
-                     document.getElementById('breadcrumb-category').textContent = 'All Categories';
-                 }
-             });
-         
-             window.addEventListener('scroll', handleScroll);
-         });
-      </script>
-      <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93d2063e4dc6bf64',t:'MTc0NjgwMjM4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93dbe7e70db784f9',t:'MTc0NjkwNjAwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-   </body>
+            // Check URL parameter for name
+            const urlParams = new URLSearchParams(window.location.search);
+            const userName = urlParams.get('name');
+            if (userName) {
+                showWelcomeMessage(userName);
+            }
+
+            // Fetch user data to persist welcome message
+            fetch('/user', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    const userStatus = document.getElementById('user-status');
+                    const logoutLink = document.getElementById('logout-link');
+                    const adminLink = document.getElementById('admin-link');
+                    const ordersLink = document.getElementById('orders-link');
+                    
+                    if (data.email !== 'Guest') {
+                        userStatus.textContent = 'Logout';
+                        logoutLink.style.display = 'inline';
+                        userStatus.style.display = 'none';
+                        ordersLink.style.display = 'inline';
+                        
+                        if (data.isAdmin && adminLink) {
+                            adminLink.style.display = 'inline';
+                        } else if (adminLink) {
+                            adminLink.style.display = 'none';
+                        }
+                        // Show welcome message for logged-in user
+                        if (data.firstName && data.lastName && !userName) {
+                            showWelcomeMessage(`${data.firstName} ${data.lastName}`);
+                        }
+                    } else {
+                        userStatus.textContent = 'Login';
+                        userStatus.style.display = 'inline';
+                        logoutLink.style.display = 'none';
+                        ordersLink.style.display = 'none';
+                        if (adminLink) {
+                            adminLink.style.display = 'none';
+                        }
+                        userStatus.onclick = () => window.location.href = '/login';
+                    }
+                })
+                .catch(err => console.error('User fetch error:', err));
+
+            // CSRF token for logout
+            fetch('/csrf-token', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    const logoutForm = document.getElementById('logout-form');
+                    logoutForm.insertAdjacentHTML('afterbegin', `<input type="hidden" name="csrfToken" value="${data.csrfToken}">`);
+                    
+                    logoutForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const button = logoutForm.querySelector('button[type="submit"]');
+                        button.disabled = true;
+                        try {
+                            const response = await fetch('/logout', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-Token': data.csrfToken
+                                },
+                                credentials: 'include'
+                            });
+                            if (!response.ok) throw new Error('Logout failed');
+                            const result = await response.json();
+                            if (result.csrfToken) {
+                                document.querySelector('#logout-form input[name="csrfToken"]').value = result.csrfToken;
+                            }
+                            window.location.href = result.redirect || '/login';
+                        } catch (err) {
+                            console.error('Logout error:', err);
+                            fetch('/csrf-token', { credentials: 'include' })
+                                .then(res => res.json())
+                                .then(data => {
+                                    document.querySelector('#logout-form input[name="csrfToken"]').value = data.csrfToken;
+                                    window.location.href = '/login';
+                                });
+                        } finally {
+                            button.disabled = false;
+                        }
+                    });
+                })
+                .catch(err => console.error('CSRF fetch error:', err));
+
+            // Load categories
+            if (document.getElementById('category-select')) {
+                fetch('/categories')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Categories fetch failed');
+                        return response.json();
+                    })
+                    .then(categories => {
+                        const categorySelect = document.getElementById('category-select');
+                        categories.forEach(category => {
+                            const option = document.createElement('option');
+                            option.value = category.catid;
+                            option.textContent = category.name;
+                            categorySelect.appendChild(option);
+                        });
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const catid = urlParams.get('catid');
+                        if (catid) {
+                            categorySelect.value = catid;
+                            currentCatid = catid;
+                            loadProducts(catid);
+                            document.getElementById('breadcrumb-category').textContent = categorySelect.options[categorySelect.selectedIndex].text;
+                        } else {
+                            loadProducts();
+                        }
+                    })
+                    .catch(err => console.error('Categories error:', err));
+            }
+
+            function showLoading() {
+                document.getElementById('loading').classList.add('visible');
+            }
+        
+            function hideLoading() {
+                document.getElementById('loading').classList.remove('visible');
+            }
+        
+            function loadProducts(catid = null, reset = false) {
+                if (isLoading || (!hasMore && !reset)) return;
+                isLoading = true;
+                showLoading();
+        
+                if (reset) {
+                    currentPage = 1;
+                    hasMore = true;
+                    document.getElementById('product-list').innerHTML = '<div class="loading" id="loading">Loading more products...</div>';
+                }
+        
+                const url = catid ? `/products/${catid}?page=${currentPage}&limit=8` : `/products?page=${currentPage}&limit=8`;
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Products fetch failed');
+                        return response.json();
+                    })
+                    .then(data => {
+                        const productList = document.getElementById('product-list');
+                        const products = data.products;
+                        hasMore = currentPage < data.pagination.totalPages;
+                        currentPage++;
+        
+                        products.forEach(product => {
+                            const productDiv = document.createElement('div');
+                            productDiv.className = 'product';
+                            const imageSrc = product.thumbnail || `/images/product${product.pid}.jpg`;
+                            productDiv.innerHTML = DOMPurify.sanitize(`
+                                <a href="/product?pid=${product.pid}">
+                                    <img src="${imageSrc}" alt="${product.name}" class="thumbnail" loading="lazy"
+                                         onerror="this.src='/images/fallback.jpg';">
+                                    <h3>${product.name}</h3>
+                                </a>
+                                <p>$${product.price}</p>
+                                <button class="add-to-cart" data-pid="${product.pid}" data-name="${product.name}" data-price="${product.price}">Add to Cart</button>
+                            `);
+                            productList.insertBefore(productDiv, document.getElementById('loading'));
+                        });
+        
+                        if (!hasMore) {
+                            hideLoading();
+                            const noMore = document.createElement('div');
+                            noMore.className = 'no-more';
+                            noMore.textContent = 'No more products to load';
+                            productList.insertBefore(noMore, document.getElementById('loading'));
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Products error:', err);
+                        document.getElementById('product-list').innerHTML = '<p>Error loading products</p>';
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        if (hasMore) hideLoading();
+                    });
+            }
+        
+            function handleScroll() {
+                const productList = document.getElementById('product-list');
+                const rect = productList.getBoundingClientRect();
+                const isBottom = rect.bottom <= window.innerHeight + 100;
+                if (isBottom && !isLoading && hasMore) {
+                    loadProducts(currentCatid);
+                }
+            }
+        
+            document.getElementById('category-select').addEventListener('change', (e) => {
+                const newCatid = e.target.value;
+                currentCatid = newCatid;
+                if (currentCatid) {
+                    history.pushState({}, '', `?catid=${currentCatid}`);
+                    loadProducts(currentCatid, true);
+                    document.getElementById('breadcrumb-category').textContent = e.target.options[e.target.selectedIndex].text;
+                } else {
+                    history.pushState({}, '', '/');
+                    loadProducts(null, true);
+                    document.getElementById('breadcrumb-category').textContent = 'All Categories';
+                }
+            });
+        
+            window.addEventListener('scroll', handleScroll);
+        });
+    </script>
+</body>
 </html>
