@@ -16,19 +16,9 @@
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required placeholder="Enter your email">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password (8-50 characters)">
-                <label for="confirm-password">Re-enter Password</label>
-                <input type="password" id="confirm-password" name="confirm-password" required placeholder="Confirm your password">
-                <div>
-                    <button type="button" id="send-code">Send Verification Code</button>
-                    <small id="code-status" style="display: none;"></small>
-                </div>
-                <div id="code-section" style="display: none;">
-                    <label for="verification-code">Verification Code</label>
-                    <input type="text" id="verification-code" name="verification-code" placeholder="Enter verification code" required>
-                </div>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
                 <div id="form-error" class="error"></div>
-                <button type="submit" id="signup-button" disabled>Signup</button>
+                <button type="submit">Signup</button>
             </form>
             <p class="back-link"><a href="/">Back to Home</a> | <a href="/login">Already have an account? Login</a></p>
         </div>
@@ -46,146 +36,44 @@
     <script src="/chat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('password');
-            const confirmPasswordInput = document.getElementById('confirm-password');
-            const verificationCodeInput = document.getElementById('verification-code');
-            const sendCodeButton = document.getElementById('send-code');
-            const codeStatus = document.getElementById('code-status');
-            const signupButton = document.getElementById('signup-button');
-            const formError = document.getElementById('form-error');
-            const codeSection = document.getElementById('code-section');
-
             fetch('/csrf-token', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('csrfToken').value = data.csrfToken;
-                    console.log('CSRF token fetched:', data.csrfToken);
                 })
-                .catch(err => {
-                    console.error('CSRF fetch error:', err);
-                    formError.textContent = 'Failed to initialize form. Please refresh the page.';
-                });
-
-            sendCodeButton.addEventListener('click', async () => {
-                const email = emailInput.value.trim();
-                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                if (!emailRegex.test(email)) {
-                    formError.textContent = 'Please enter a valid email address.';
-                    return;
-                }
-
-                sendCodeButton.disabled = true;
-                sendCodeButton.textContent = 'Sending...';
-                formError.textContent = '';
-                codeStatus.style.display = 'none';
-
-                try {
-                    const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
-                    const csrfData = await csrfResponse.json();
-                    document.getElementById('csrfToken').value = csrfData.csrfToken;
-                    console.log('CSRF token for sending code:', csrfData.csrfToken);
-
-                    const response = await fetch('/send-verification-code', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, csrfToken: csrfData.csrfToken }),
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    console.log('Send verification code response:', data);
-
-                    if (response.ok) {
-                        codeSection.style.display = 'block';
-                        codeStatus.style.display = 'block';
-                        codeStatus.style.color = 'green';
-                        codeStatus.textContent = 'Verification code sent. Check your email.';
-                        setTimeout(() => codeStatus.style.display = 'none', 5000);
-                    } else {
-                        formError.textContent = data.error || 'Failed to send verification code.';
-                        console.error('Failed to send code:', data.error);
-                    }
-                } catch (err) {
-                    console.error('Send code error:', err);
-                    formError.textContent = 'An error occurred while sending the code. Please try again.';
-                } finally {
-                    sendCodeButton.disabled = false;
-                    sendCodeButton.textContent = 'Send Verification Code';
-                }
-            });
-
-            [emailInput, passwordInput, confirmPasswordInput, verificationCodeInput].forEach(input => {
-                input.addEventListener('input', validateForm);
-            });
-
-            function validateForm() {
-                const email = emailInput.value.trim();
-                const password = passwordInput.value.trim();
-                const confirmPassword = confirmPasswordInput.value.trim();
-                const verificationCode = verificationCodeInput.value.trim();
-                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-                if (!emailRegex.test(email)) {
-                    formError.textContent = 'Please enter a valid email address.';
-                    signupButton.disabled = true;
-                    return false;
-                }
-                if (password.length < 8 || password.length > 50) {
-                    formError.textContent = 'Password must be between 8 and 50 characters long.';
-                    signupButton.disabled = true;
-                    return false;
-                }
-                if (password !== confirmPassword) {
-                    formError.textContent = 'Passwords do not match.';
-                    signupButton.disabled = true;
-                    return false;
-                }
-                if (codeSection.style.display === 'block' && !verificationCode) {
-                    formError.textContent = 'Please enter the verification code.';
-                    signupButton.disabled = true;
-                    return false;
-                }
-                formError.textContent = '';
-                signupButton.disabled = false;
-                return true;
-            }
+                .catch(err => console.error('CSRF fetch error:', err));
 
             document.getElementById('signup-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                console.log('Signup form submitted');
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value.trim();
+                const errorDiv = document.getElementById('form-error');
 
-                if (!validateForm()) {
-                    console.log('Validation failed, stopping submission');
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailRegex.test(email)) {
+                    errorDiv.textContent = 'Please enter a valid email address.';
                     return;
                 }
-
-                const email = emailInput.value.trim();
-                const password = passwordInput.value.trim();
-                const verificationCode = verificationCodeInput.value.trim();
-
-                signupButton.disabled = true;
-                signupButton.textContent = 'Signing Up...';
-                formError.textContent = '';
+                if (password.length < 8 || password.length > 50) {
+                    errorDiv.textContent = 'Password must be between 8 and 50 characters long.';
+                    return;
+                }
 
                 try {
                     const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
                     const csrfData = await csrfResponse.json();
                     document.getElementById('csrfToken').value = csrfData.csrfToken;
-                    console.log('CSRF token for signup:', csrfData.csrfToken);
 
                     const signupResponse = await fetch('/signup', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password, verificationCode, csrfToken: csrfData.csrfToken }),
+                        body: JSON.stringify({ email, password, csrfToken: csrfData.csrfToken }),
                         credentials: 'include'
                     });
 
                     const data = await signupResponse.json();
-                    console.log('Signup response:', data);
-
                     if (!signupResponse.ok) {
-                        formError.textContent = data.error || 'Signup failed. Please try again.';
+                        errorDiv.textContent = data.error || 'Signup failed. Please try again.';
                         console.error('Signup failed:', data.error);
                         await fetch('/csrf-token', { credentials: 'include' })
                             .then(res => res.json())
@@ -196,13 +84,10 @@
                     window.location.href = data.redirect || '/';
                 } catch (err) {
                     console.error('Signup error:', err);
-                    formError.textContent = 'An error occurred during signup. Please try again later.';
+                    errorDiv.textContent = 'An error occurred during signup. Please try again later.';
                     await fetch('/csrf-token', { credentials: 'include' })
                         .then(res => res.json())
                         .then(data => document.getElementById('csrfToken').value = data.csrfToken);
-                } finally {
-                    signupButton.disabled = false;
-                    signupButton.textContent = 'Signup';
                 }
             });
         });
