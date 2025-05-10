@@ -34,14 +34,12 @@ const db = mysql.createPool({
     }
 });
 
-db.getConnection((err, connection) => {
-    if (err) {
+db.getConnection()
+    .then(() => console.log('Database connected successfully'))
+    .catch(err => {
         console.error('Database connection failed:', err);
         process.exit(1);
-    }
-    console.log('Database connected successfully');
-    connection.release();
-});
+    });
 
 // Nodemailer setup
 const transporter = nodemailer.createTransport({
@@ -74,7 +72,7 @@ app.use('/images', express.static(path.join(__dirname, 'images'), {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     setHeaders: (res) => {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
@@ -130,7 +128,7 @@ const validateCsrfToken = (req, res, next) => {
     const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.cookies.csrfToken;
     if (!csrfToken || !bodyToken || csrfToken !== bodyToken) {
         console.error('CSRF token validation failed:', { csrfToken, bodyToken });
-        return res.status(403).send('CSRF token validation failed');
+        return res.status(403).json({ error: 'CSRF token validation failed' });
     }
     next();
 };
@@ -164,12 +162,12 @@ const authenticate = async (req, res, next) => {
         next();
     } catch (err) {
         console.error('Auth error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
 const isAdmin = (req, res, next) => {
-    if (!req.user || !req.user.is_admin) return res.status(403).send('Admin access required');
+    if (!req.user || !req.user.is_admin) return res.status(403).json({ error: 'Admin access required' });
     next();
 };
 
@@ -246,10 +244,10 @@ app.get('/user', async (req, res) => {
         const [results] = await db.query('SELECT email, is_admin FROM users WHERE auth_token = ?', [authToken]);
         if (!results.length) return res.json({ email: 'Guest', isAdmin: false });
         
-        res.json({ email: results[0].email, isAdmin: results[0].is_admin });
+        res.json({ email: escapeHtml(results[0].email), isAdmin: results[0].is_admin });
     } catch (err) {
         console.error('User fetch error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -259,7 +257,7 @@ app.get('/categories', async (req, res) => {
         res.json(results.map(row => ({ catid: row.catid, name: escapeHtml(row.name) })));
     } catch (err) {
         console.error('Categories error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -300,7 +298,7 @@ app.get('/products', async (req, res) => {
         }, 1000);
     } catch (err) {
         console.error('Products error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -342,7 +340,7 @@ app.get('/products/:catid', async (req, res) => {
         }, 1000);
     } catch (err) {
         console.error('Products by catid error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -360,7 +358,7 @@ app.get('/product/:pid', async (req, res) => {
         });
     } catch (err) {
         console.error('Product error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -401,7 +399,7 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
         const [orders] = await db.query('SELECT * FROM orders ORDER BY created_at DESC');
         res.json(orders.map(order => ({
             order_id: order.orderID,
-            email: order.user_email,
+            email: escapeHtml(order.user_email || 'Guest'),
             total_amount: order.total_price,
             items: order.items,
             status: order.status,
@@ -413,90 +411,51 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-app.post('/send-verification-code', (req, res) => {
-    console.log('Raw request body:', req.body); // Debug log for incoming data
-    const { email, firstName, lastName, password } = req.body;
-    const csrfToken = req.cookies.csrfToken;
+app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
+    try {
+        console.log('Raw request body:', req.body);
+        const { email, firstName, lastName, password } = req.body;
 
-    // Validate CSRF token
-    if (!csrfToken || csrfToken !== req.body.csrfToken) {
-        return res.status(403).send('Invalid CSRF token');
-    }
-
-    // Validate input
-    if (!email || !firstName || !lastName || !password) {
-        return res.status(400).send('All fields are required');
-    }
-
-    db.getConnection((err, connection) => {
-        if (err) {
-            console.error('Database connection error:', err.message, err.stack);
-            return res.status(500).send('Database connection failed');
+        // Validate input
+        const emailError = validateEmail(email);
+        const firstNameError = validateName(firstName, 'First Name');
+        const lastNameError = validateName(lastName, 'Last Name');
+        const passwordError = validatePassword(password);
+        if (emailError || firstNameError || lastNameError || passwordError) {
+            return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
         }
 
-        connection.beginTransaction(async (err) => {
-            if (err) {
-                console.error('Transaction begin error:', err.message, err.stack);
-                connection.release();
-                return res.status(500).send('Transaction failed');
-            }
+        // Check if email already exists
+        const [existing] = await db.query('SELECT email FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({ error: 'Email already registered' });
+        }
 
-            try {
-                // Check if email already exists
-                const [existing] = await connection.query('SELECT email FROM users WHERE email = ?', [email]);
-                if (existing.length > 0) {
-                    throw new Error('Email already registered');
-                }
+        // Generate verification code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-                // Hash password
-                const hash = await bcrypt.hash(password, 10);
+        // Insert verification code
+        await db.query(
+            'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
+            [email, code, expiresAt]
+        );
+        console.log('Verification code inserted for email:', email);
 
-                // Insert user into users table
-                const [userResult] = await connection.query(
-                    'INSERT INTO users (email, firstName, lastName, password, is_admin) VALUES (?, ?, ?, ?, FALSE)',
-                    [email, firstName, lastName, hash]
-                );
-                console.log('User inserted successfully for email:', email);
+        // Send email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Verify Your Email - Dummy Shopping Website',
+            text: `Your verification code is: ${code}. It expires in 10 minutes.`
+        };
 
-                // Generate verification code
-                const code = Math.floor(100000 + Math.random() * 900000).toString();
-                const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-                // Insert verification code
-                await connection.query(
-                    'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
-                    [email, code, expiresAt]
-                );
-                console.log('Verification code inserted for email:', email);
-
-                // Commit transaction
-                await connection.commit();
-                console.log('Transaction committed for email:', email);
-
-                // Send email
-                const mailOptions = {
-                    from: process.env.EMAIL_USER,
-                    to: email,
-                    subject: 'Verify Your Email - Dummy Shopping Website',
-                    text: `Your verification code is: ${code}. It expires in 10 minutes.`
-                };
-
-                transporter.sendMail(mailOptions, (error) => {
-                    connection.release();
-                    if (error) {
-                        console.error('Email sending error:', error.message, error.stack);
-                        return res.status(500).send('Error sending verification email: ' + error.message);
-                    }
-                    res.send('Verification code sent');
-                });
-            } catch (err) {
-                console.error('Transaction error:', err.message, err.stack);
-                await connection.rollback();
-                connection.release();
-                res.status(500).send('Error during signup process: ' + err.message);
-            }
-        });
-    });
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Send verification code error:', err);
+        res.status(500).json({ error: 'An error occurred while sending the verification code' });
+    }
 });
 
 app.post('/verify-code', validateCsrfToken, async (req, res) => {
@@ -504,53 +463,61 @@ app.post('/verify-code', validateCsrfToken, async (req, res) => {
         const { email, code, firstName, lastName, password } = req.body;
         console.log('Verify code attempt:', { email, code });
 
-        const connection = await db.getConnection();
-        try {
-            const [codes] = await connection.query(
-                'SELECT * FROM verification_codes WHERE email = ? AND code = ? AND expires_at > NOW()',
-                [email, code]
-            );
-            if (codes.length === 0) {
-                connection.release();
-                return res.status(400).json({ error: 'Invalid or expired verification code' });
-            }
-
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const authToken = crypto.randomBytes(32).toString('hex');
-            const sanitizedEmail = escapeHtml(email);
-            const sanitizedFirstName = escapeHtml(firstName);
-            const sanitizedLastName = escapeHtml(lastName);
-
-            await connection.query(
-                'INSERT INTO users (email, firstName, lastName, password, auth_token, is_admin) VALUES (?, ?, ?, ?, ?, ?)',
-                [sanitizedEmail, sanitizedFirstName, sanitizedLastName, hashedPassword, authToken, 0]
-            );
-
-            await connection.query('DELETE FROM verification_codes WHERE email = ?', [email]);
-
-            connection.release();
-
-            console.log('Setting authToken cookie for:', req.hostname);
-            res.cookie('authToken', authToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 2 * 24 * 60 * 60 * 1000,
-                path: '/'
-            });
-
-            res.json({ 
-                success: true,
-                redirect: '/',
-                email: sanitizedEmail
-            });
-        } catch (err) {
-            connection.release();
-            console.error('Verify code error:', err);
-            res.status(500).json({ error: 'Internal Server Error' });
+        // Validate inputs
+        const emailError = validateEmail(email);
+        const firstNameError = validateName(firstName, 'First Name');
+        const lastNameError = validateName(lastName, 'Last Name');
+        const passwordError = validatePassword(password);
+        if (emailError || firstNameError || lastNameError || passwordError) {
+            return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
         }
+
+        // Check verification code
+        const [codes] = await db.query(
+            'SELECT * FROM verification_codes WHERE email = ? AND code = ? AND expires_at > NOW()',
+            [email, code]
+        );
+        if (codes.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired verification code' });
+        }
+
+        // Check if email already exists
+        const [existing] = await db.query('SELECT email FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({ error: 'Email already registered' });
+        }
+
+        // Insert user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const authToken = crypto.randomBytes(32).toString('hex');
+        const sanitizedEmail = escapeHtml(email);
+        const sanitizedFirstName = escapeHtml(firstName);
+        const sanitizedLastName = escapeHtml(lastName);
+
+        await db.query(
+            'INSERT INTO users (email, firstName, lastName, password, auth_token, is_admin) VALUES (?, ?, ?, ?, ?, ?)',
+            [sanitizedEmail, sanitizedFirstName, sanitizedLastName, hashedPassword, authToken, 0]
+        );
+
+        // Delete verification code
+        await db.query('DELETE FROM verification_codes WHERE email = ?', [email]);
+
+        console.log('Setting authToken cookie for:', req.hostname);
+        res.cookie('authToken', authToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 2 * 24 * 60 * 60 * 1000,
+            path: '/'
+        });
+
+        res.json({ 
+            success: true,
+            redirect: '/',
+            email: sanitizedEmail
+        });
     } catch (err) {
-        console.error('Connection error:', err);
+        console.error('Verify code error:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
@@ -560,7 +527,7 @@ app.post('/signup', validateCsrfToken, async (req, res) => {
         const { email, firstName, lastName, password } = req.body;
         console.log('Signup attempt:', { email, domain: req.hostname });
 
-        const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
+        const emailError = validateEmail(email);
         const firstNameError = validateName(firstName, 'First Name');
         const lastNameError = validateName(lastName, 'Last Name');
         const passwordError = validatePassword(password);
@@ -568,58 +535,39 @@ app.post('/signup', validateCsrfToken, async (req, res) => {
             return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
         }
 
-        const connection = await db.getConnection();
-        try {
-            const [existingUsers] = await connection.query(
-                'SELECT email FROM users WHERE email = ?',
-                [email]
-            );
-            if (existingUsers.length > 0) {
-                connection.release();
-                return res.status(400).json({ error: 'Email already registered' });
-            }
-
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const authToken = crypto.randomBytes(32).toString('hex');
-            const sanitizedEmail = escapeHtml(email);
-            const sanitizedFirstName = escapeHtml(firstName);
-            const sanitizedLastName = escapeHtml(lastName);
-
-            const [result] = await connection.query(
-                'INSERT INTO users (email, firstName, lastName, password, auth_token, is_admin) VALUES (?, ?, ?, ?, ?, ?)',
-                [sanitizedEmail, sanitizedFirstName, sanitizedLastName, hashedPassword, authToken, 0]
-            );
-
-            connection.release();
-
-            console.log('Setting authToken cookie for:', req.hostname);
-            res.cookie('authToken', authToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 2 * 24 * 60 * 60 * 1000,
-                path: '/'
-            });
-
-            res.json({ 
-                success: true,
-                redirect: '/',
-                email: sanitizedEmail
-            });
-        } catch (err) {
-            connection.release();
-            console.error('Signup error:', err.stack);
-            res.status(500).json({ 
-                error: 'Internal server error',
-                details: process.env.NODE_ENV === 'development' ? err.message : null
-            });
+        const [existingUsers] = await db.query('SELECT email FROM users WHERE email = ?', [email]);
+        if (existingUsers.length > 0) {
+            return res.status(400).json({ error: 'Email already registered' });
         }
-    } catch (err) {
-        console.error('Connection error:', err.stack);
-        res.status(500).json({ 
-            error: 'Internal server error',
-            details: process.env.NODE_ENV === 'development' ? err.message : null
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const authToken = crypto.randomBytes(32).toString('hex');
+        const sanitizedEmail = escapeHtml(email);
+        const sanitizedFirstName = escapeHtml(firstName);
+        const sanitizedLastName = escapeHtml(lastName);
+
+        await db.query(
+            'INSERT INTO users (email, firstName, lastName, password, auth_token, is_admin) VALUES (?, ?, ?, ?, ?, ?)',
+            [sanitizedEmail, sanitizedFirstName, sanitizedLastName, hashedPassword, authToken, 0]
+        );
+
+        console.log('Setting authToken cookie for:', req.hostname);
+        res.cookie('authToken', authToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 2 * 24 * 60 * 60 * 1000,
+            path: '/'
         });
+
+        res.json({ 
+            success: true,
+            redirect: '/',
+            email: sanitizedEmail
+        });
+    } catch (err) {
+        console.error('Signup error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -628,71 +576,54 @@ app.post('/login', validateCsrfToken, async (req, res) => {
         const { email, password } = req.body;
         console.log('Login attempt:', { email, domain: req.hostname });
         
-        const connection = await db.getConnection();
-        
-        try {
-            const [users] = await connection.query(
-                'SELECT userid, email, password, is_admin FROM users WHERE email = ?', 
-                [email]
-            );
+        const [users] = await db.query(
+            'SELECT userid, email, password, is_admin FROM users WHERE email = ?', 
+            [email]
+        );
 
-            if (users.length === 0) {
-                connection.release();
-                return res.status(401).json({ error: 'Invalid credentials' });
-            }
-
-            const user = users[0];
-            const match = await bcrypt.compare(password, user.password);
-            
-            if (!match) {
-                connection.release();
-                return res.status(401).json({ error: 'Invalid credentials' });
-            }
-
-            const authToken = crypto.randomBytes(32).toString('hex');
-            
-            await connection.query(
-                'UPDATE users SET auth_token = ? WHERE userid = ?',
-                [authToken, user.userid]
-            );
-
-            connection.release();
-
-            console.log('Setting authToken cookie for:', req.hostname);
-            res.cookie('authToken', authToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 2 * 24 * 60 * 60 * 1000,
-                path: '/'
-            });
-
-            res.json({ 
-                role: user.is_admin ? 'admin' : 'user',
-                redirect: user.is_admin ? '/admin' : '/',
-                email: user.email
-            });
-
-        } catch (err) {
-            connection.release();
-            console.error('Login error:', err.stack);
-            res.status(500).json({ 
-                error: 'Internal server error',
-                details: process.env.NODE_ENV === 'development' ? err.message : null
-            });
+        if (users.length === 0) {
+            return res.status(401).json({ error: 'Invalid credentials' });
         }
-    } catch (err) {
-        console.error('Connection error:', err.stack);
-        res.status(500).json({ 
-            error: 'Internal server error',
-            details: process.env.NODE_ENV === 'development' ? err.message : null
+
+        const user = users[0];
+        const match = await bcrypt.compare(password, user.password);
+        
+        if (!match) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const authToken = crypto.randomBytes(32).toString('hex');
+        
+        await db.query(
+            'UPDATE users SET auth_token = ? WHERE userid = ?',
+            [authToken, user.userid]
+        );
+
+        console.log('Setting authToken cookie for:', req.hostname);
+        res.cookie('authToken', authToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 2 * 24 * 60 * 60 * 1000,
+            path: '/'
         });
+
+        res.json({ 
+            role: user.is_admin ? 'admin' : 'user',
+            redirect: user.is_admin ? '/admin' : '/',
+            email: escapeHtml(user.email)
+        });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 app.post('/logout', validateCsrfToken, authenticate, async (req, res) => {
     try {
-        await db.query('UPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
+        if (req.user.userid) {
+            await db.query('UPDATE users SET auth_token = NULL WHERE userid = ?', [req.user.userid]);
+        }
         console.log('Clearing authToken cookie for:', req.hostname);
         res.clearCookie('authToken');
         res.clearCookie('guestId');
@@ -749,65 +680,57 @@ app.post('/validate-order', validateCsrfToken, authenticate, async (req, res) =>
             return res.status(400).json({ error: 'Invalid items' });
         }
 
-        const connection = await db.getConnection();
-        try {
-            let totalPrice = 0;
-            const orderItems = [];
-            const currency = 'USD';
-            const merchantEmail = 'testing6070@example.com';
-            const salt = crypto.randomBytes(16).toString('hex');
+        let totalPrice = 0;
+        const orderItems = [];
+        const currency = 'USD';
+        const merchantEmail = 'testing6070@example.com';
+        const salt = crypto.randomBytes(16).toString('hex');
 
-            for (const item of items) {
-                console.log('Processing item:', item);
-                if (!item.pid || !Number.isInteger(item.quantity) || item.quantity <= 0) {
-                    console.log('Invalid item data:', item);
-                    throw new Error('Invalid item data');
-                }
-
-                const [products] = await connection.query('SELECT pid, price FROM products WHERE pid = ?', [item.pid]);
-                console.log('Database query result for pid', item.pid, ':', products);
-                if (products.length === 0) {
-                    console.log('Product not found:', item.pid);
-                    throw new Error(`Product ${item.pid} not found`);
-                }
-
-                const product = products[0];
-                totalPrice += product.price * item.quantity;
-                orderItems.push({
-                    pid: item.pid,
-                    quantity: item.quantity,
-                    price: product.price
-                });
+        for (const item of items) {
+            console.log('Processing item:', item);
+            if (!item.pid || !Number.isInteger(item.quantity) || item.quantity <= 0) {
+                console.log('Invalid item data:', item);
+                return res.status(400).json({ error: 'Invalid item data' });
             }
 
-            const dataToHash = [
-                currency,
-                merchantEmail,
-                salt,
-                ...orderItems.map(item => `${item.pid}:${item.quantity}:${item.price}`)
-            ].join('|');
-            const digest = crypto.createHash('sha256').update(dataToHash).digest('hex');
-            console.log('Digest data:', dataToHash);
-            console.log('Generated digest:', digest);
+            const [products] = await db.query('SELECT pid, price FROM products WHERE pid = ?', [item.pid]);
+            console.log('Database query result for pid', item.pid, ':', products);
+            if (products.length === 0) {
+                console.log('Product not found:', item.pid);
+                return res.status(400).json({ error: `Product ${item.pid} not found` });
+            }
 
-            const userEmail = req.user && req.user.email !== 'Guest' ? req.user.email : null;
-            console.log('User email:', userEmail);
-            const [result] = await connection.query(
-                'INSERT INTO orders (user_email, items, total_price, digest, salt, status) VALUES (?, ?, ?, ?, ?, ?)',
-                [userEmail, JSON.stringify(orderItems), totalPrice, digest, salt, 'pending']
-            );
-            console.log('Order inserted, ID:', result.insertId);
-
-            connection.release();
-            res.json({ orderID: result.insertId, digest });
-        } catch (err) {
-            connection.release();
-            console.error('Order validation error:', err);
-            res.status(400).json({ error: err.message });
+            const product = products[0];
+            totalPrice += product.price * item.quantity;
+            orderItems.push({
+                pid: item.pid,
+                quantity: item.quantity,
+                price: product.price
+            });
         }
+
+        const dataToHash = [
+            currency,
+            merchantEmail,
+            salt,
+            ...orderItems.map(item => `${item.pid}:${item.quantity}:${item.price}`)
+        ].join('|');
+        const digest = crypto.createHash('sha256').update(dataToHash).digest('hex');
+        console.log('Digest data:', dataToHash);
+        console.log('Generated digest:', digest);
+
+        const userEmail = req.user && req.user.email !== 'Guest' ? req.user.email : null;
+        console.log('User email:', userEmail);
+        const [result] = await db.query(
+            'INSERT INTO orders (user_email, items, total_price, digest, salt, status) VALUES (?, ?, ?, ?, ?, ?)',
+            [userEmail, JSON.stringify(orderItems), totalPrice, digest, salt, 'pending']
+        );
+        console.log('Order inserted, ID:', result.insertId);
+
+        res.json({ orderID: result.insertId, digest });
     } catch (err) {
-        console.error('Connection error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Order validation error:', err);
+        res.status(400).json({ error: err.message || 'Internal Server Error' });
     }
 });
 
@@ -887,153 +810,145 @@ app.post('/paypal-webhook', async (req, res) => {
 });
 
 app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single('image'), async (req, res) => {
-    const { catid, name, price, description } = req.body;
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    try {
+        const { catid, name, price, description } = req.body;
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const nameError = validateTextInput(name, 255, 'Product name');
-    const descError = validateTextInput(description, 1000, 'Description');
-    const priceError = validatePrice(price);
-    if (nameError || descError || priceError || !catid) {
-        return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
-    }
-
-    const sanitizedName = sanitizeHtml(name);
-    const sanitizedDesc = sanitizeHtml(description);
-
-    if (imagePath) {
-        if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
-            return res.status(400).send('Invalid image type. Only JPEG, PNG, or GIF allowed.');
+        const nameError = validateTextInput(name, 255, 'Product name');
+        const descError = validateTextInput(description, 1000, 'Description');
+        const priceError = validatePrice(price);
+        if (nameError || descError || priceError || !catid) {
+            return res.status(400).json({ error: nameError || descError || priceError || 'Category ID is required' });
         }
 
-        sharp(req.file.path)
-            .resize(200, 200)
-            .jpeg({ quality: 80 })
-            .toFile(`Uploads/thumbnail-${req.file.filename}`, (err) => {
-                if (err) {
-                    console.error('Image resize error:', err);
-                    return res.status(500).send('Internal Server Error');
-                }
-                const thumbnailPath = `/Uploads/thumbnail-${req.file.filename}`;
-                const sql = 'INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)';
-                db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath], (err) => {
-                    if (err) {
-                        console.error('Add product error:', err);
-                        return res.status(500).send('Internal Server Error');
-                    }
-                    res.send('Product added');
-                });
-            });
-    } else {
-        const sql = 'INSERT INTO products (catid, name, price, description) VALUES (?, ?, ?, ?)';
-        db.query(sql, [catid, sanitizedName, price, sanitizedDesc], (err) => {
-            if (err) {
-                console.error('Add product error:', err);
-                return res.status(500).send('Internal Server Error');
+        const sanitizedName = sanitizeHtml(name);
+        const sanitizedDesc = sanitizeHtml(description);
+
+        if (imagePath) {
+            if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
+                return res.status(400).json({ error: 'Invalid image type. Only JPEG, PNG, or GIF allowed.' });
             }
-            res.send('Product added');
-        });
+
+            await sharp(req.file.path)
+                .resize(200, 200)
+                .jpeg({ quality: 80 })
+                .toFile(`uploads/thumbnail-${req.file.filename}`);
+
+            const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
+            await db.query(
+                'INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)',
+                [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath]
+            );
+        } else {
+            await db.query(
+                'INSERT INTO products (catid, name, price, description) VALUES (?, ?, ?, ?)',
+                [catid, sanitizedName, price, sanitizedDesc]
+            );
+        }
+
+        res.json({ success: true, message: 'Product added' });
+    } catch (err) {
+        console.error('Add product error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload.single('image'), async (req, res) => {
-    const { catid, name, price, description } = req.body;
-    const pid = req.params.pid;
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    try {
+        const { catid, name, price, description } = req.body;
+        const pid = req.params.pid;
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const nameError = validateTextInput(name, 255, 'Product name');
-    const descError = validateTextInput(description, 1000, 'Description');
-    const priceError = validatePrice(price);
-    if (nameError || descError || priceError || !catid) {
-        return res.status(400).send(nameError || descError || priceError || 'Category ID is required');
-    }
-
-    const sanitizedName = sanitizeHtml(name);
-    const sanitizedDesc = sanitizeHtml(description);
-
-    if (imagePath) {
-        if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
-            return res.status(400).send('Invalid image type. Only JPEG, PNG, or GIF allowed.');
+        const nameError = validateTextInput(name, 255, 'Product name');
+        const descError = validateTextInput(description, 1000, 'Description');
+        const priceError = validatePrice(price);
+        if (nameError || descError || priceError || !catid) {
+            return res.status(400).json({ error: nameError || descError || priceError || 'Category ID is required' });
         }
 
-        sharp(req.file.path)
-            .resize(200, 200)
-            .jpeg({ quality: 80 })
-            .toFile(`Uploads/thumbnail-${req.file.filename}`, (err) => {
-                if (err) {
-                    console.error('Image resize error:', err);
-                    return res.status(500).send('Internal Server Error');
-                }
-                const thumbnailPath = `/Uploads/thumbnail-${req.file.filename}`;
-                const sql = 'UPDATE products SET catid=?, name=?, price=?, description=?, image=?, thumbnail=? WHERE pid=?';
-                db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath, pid], (err) => {
-                    if (err) {
-                        console.error('Update product error:', err);
-                        return res.status(500).send('Internal Server Error');
-                    }
-                    res.send('Product updated');
-                });
-            });
-    } else {
-        const sql = 'UPDATE products SET catid=?, name=?, price=?, description=? WHERE pid=?';
-        db.query(sql, [catid, sanitizedName, price, sanitizedDesc, pid], (err) => {
-            if (err) {
-                console.error('Update product error:', err);
-                return res.status(500).send('Internal Server Error');
+        const sanitizedName = sanitizeHtml(name);
+        const sanitizedDesc = sanitizeHtml(description);
+
+        if (imagePath) {
+            if (!['image/jpeg', 'image/png', 'image/gif'].includes(req.file.mimetype)) {
+                return res.status(400).json({ error: 'Invalid image type. Only JPEG, PNG, or GIF allowed.' });
             }
-            res.send('Product updated');
-        });
+
+            await sharp(req.file.path)
+                .resize(200, 200)
+                .jpeg({ quality: 80 })
+                .toFile(`uploads/thumbnail-${req.file.filename}`);
+
+            const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
+            await db.query(
+                'UPDATE products SET catid = ?, name = ?, price = ?, description = ?, image = ?, thumbnail = ? WHERE pid = ?',
+                [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath, pid]
+            );
+        } else {
+            await db.query(
+                'UPDATE products SET catid = ?, name = ?, price = ?, description = ? WHERE pid = ?',
+                [catid, sanitizedName, price, sanitizedDesc, pid]
+            );
+        }
+
+        res.json({ success: true, message: 'Product updated' });
+    } catch (err) {
+        console.error('Update product error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 app.post('/add-category', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
-    const { name } = req.body;
-    const nameError = validateTextInput(name, 255, 'Category name');
-    if (nameError) return res.status(400).send(nameError);
+    try {
+        const { name } = req.body;
+        const nameError = validateTextInput(name, 255, 'Category name');
+        if (nameError) return res.status(400).json({ error: nameError });
 
-    const sanitizedName = sanitizeHtml(name);
-    db.query('INSERT INTO categories (name) VALUES (?)', [sanitizedName], (err) => {
-        if (err) {
-            console.error('Add category error:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-        res.send('Category added');
-    });
+        const sanitizedName = sanitizeHtml(name);
+        await db.query('INSERT INTO categories (name) VALUES (?)', [sanitizedName]);
+        res.json({ success: true, message: 'Category added' });
+    } catch (err) {
+        console.error('Add category error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 app.put('/update-category/:catid', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
-    const { name } = req.body;
-    const catid = req.params.catid;
-    const nameError = validateTextInput(name, 255, 'Category name');
-    if (nameError) return res.status(400).send(nameError);
+    try {
+        const { name } = req.body;
+        const catid = req.params.catid;
+        const nameError = validateTextInput(name, 255, 'Category name');
+        if (nameError) return res.status(400).json({ error: nameError });
 
-    const sanitizedName = sanitizeHtml(name);
-    db.query('UPDATE categories SET name=? WHERE catid=?', [sanitizedName, catid], (err) => {
-        if (err) {
-            console.error('Update category error:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-        res.send('Category updated');
-    });
+        const sanitizedName = sanitizeHtml(name);
+        await db.query('UPDATE categories SET name = ? WHERE catid = ?', [sanitizedName, catid]);
+        res.json({ success: true, message: 'Category updated' });
+    } catch (err) {
+        console.error('Update category error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
-app.delete('/delete-product/:pid', validateCsrfToken, authenticate, isAdmin, (req, res) => {
-    db.query('DELETE FROM products WHERE pid = ?', [req.params.pid], (err) => {
-        if (err) {
-            console.error('Delete product error:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-        res.send('Product deleted');
-    });
+app.delete('/delete-product/:pid', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
+    try {
+        const pid = req.params.pid;
+        await db.query('DELETE FROM products WHERE pid = ?', [pid]);
+        res.json({ success: true, message: 'Product deleted' });
+    } catch (err) {
+        console.error('Delete product error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
-app.delete('/delete-category/:catid', validateCsrfToken, authenticate, isAdmin, (req, res) => {
-    db.query('DELETE FROM categories WHERE catid = ?', [req.params.catid], (err) => {
-        if (err) {
-            console.error('Delete category error:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-        res.send('Category deleted');
-    });
+app.delete('/delete-category/:catid', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
+    try {
+        const catid = req.params.catid;
+        await db.query('DELETE FROM categories WHERE catid = ?', [catid]);
+        res.json({ success: true, message: 'Category deleted' });
+    } catch (err) {
+        console.error('Delete category error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 // Chat Routes
@@ -1197,7 +1112,7 @@ app.post('/bulk-resolve-messages', validateCsrfToken, authenticate, isAdmin, asy
 // Error handler
 app.use((err, req, res, next) => {
     console.error('Server error:', err.stack);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({ error: 'Internal Server Error' });
 });
 
 http.createServer(app).listen(3443, '0.0.0.0', () => {
