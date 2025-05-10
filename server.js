@@ -42,6 +42,17 @@ db.getConnection((err, connection) => {
     connection.release();
 });
 
+// In-memory storage for verification codes (replace with database in production)
+const verificationCodes = new Map();
+
+const generateVerificationCode = () => crypto.randomInt(100000, 999999).toString();
+
+const sendVerificationEmail = async (email, code) => {
+    // Mock email sending (replace with Nodemailer or your email service)
+    console.log(`Sending verification code ${code} to ${email}`);
+    return true; // Assume success for now
+};
+
 // Middleware
 app.use(cors({
     origin: [
@@ -178,7 +189,7 @@ const validateEmail = (email) => {
 };
 
 const validatePassword = (password) => {
-    if (!password || password.length < 8) return 'Password must be at least 8 characters';
+    if (!password || password.length < 8 || password.length > 50) return 'Password must be between 8 and 50 characters';
     return null;
 };
 
@@ -463,15 +474,45 @@ app.post('/login', validateCsrfToken, async (req, res) => {
     }
 });
 
+app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
+    try {
+        const { email } = req.body;
+        const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
+        if (emailError) {
+            return res.status(400).json({ error: emailError });
+        }
+
+        const code = generateVerificationCode();
+        const expiration = Date.now() + 10 * 60 * 1000; // 10 minutes expiration
+        verificationCodes.set(email, { code, expiration });
+
+        const success = await sendVerificationEmail(email, code);
+        if (!success) {
+            verificationCodes.delete(email);
+            return res.status(500).json({ error: 'Failed to send verification code' });
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Send verification code error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 app.post('/signup', validateCsrfToken, async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, verificationCode } = req.body;
         console.log('Signup attempt:', { email, domain: req.hostname });
 
         const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
         const passwordError = validatePassword(password);
         if (emailError || passwordError) {
             return res.status(400).json({ error: emailError || passwordError });
+        }
+
+        const stored = verificationCodes.get(email);
+        if (!stored || stored.code !== verificationCode || Date.now() > stored.expiration) {
+            return res.status(400).json({ error: 'Invalid or expired verification code' });
         }
 
         const connection = await db.getConnection();
@@ -494,6 +535,7 @@ app.post('/signup', validateCsrfToken, async (req, res) => {
                 [sanitizedEmail, hashedPassword, authToken, 0]
             );
 
+            verificationCodes.delete(email);
             connection.release();
 
             console.log('Setting authToken cookie for:', req.hostname);
