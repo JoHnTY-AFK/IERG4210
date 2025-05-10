@@ -414,6 +414,7 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
 });
 
 app.post('/send-verification-code', (req, res) => {
+    console.log('Raw request body:', req.body); // Debug log for incoming data
     const { email, firstName, lastName, password } = req.body;
     const csrfToken = req.cookies.csrfToken;
 
@@ -429,19 +430,29 @@ app.post('/send-verification-code', (req, res) => {
 
     // Check if email already exists
     db.query('SELECT email FROM users WHERE email = ?', [email], (err, results) => {
-        if (err) return res.status(500).send('Database error');
+        if (err) {
+            console.error('Database check error:', err.message, err.stack);
+            return res.status(500).send('Database error');
+        }
         if (results.length > 0) return res.status(400).send('Email already registered');
 
         // Hash password
         bcrypt.hash(password, 10, (err, hash) => {
-            if (err) return res.status(500).send('Error hashing password');
+            if (err) {
+                console.error('Password hashing error:', err.message, err.stack);
+                return res.status(500).send('Error hashing password');
+            }
 
             // Insert user into users table
             db.query(
                 'INSERT INTO users (email, firstName, lastName, password, is_admin) VALUES (?, ?, ?, ?, FALSE)',
                 [email, firstName, lastName, hash],
                 (err) => {
-                    if (err) return res.status(500).send('Error creating user: ' + err.message);
+                    if (err) {
+                        console.error('User insertion error:', err.message, err.stack);
+                        return res.status(500).send('Error creating user: ' + err.message);
+                    }
+                    console.log('User inserted successfully for email:', email);
 
                     // Generate verification code
                     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -452,7 +463,10 @@ app.post('/send-verification-code', (req, res) => {
                         'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
                         [email, code, expiresAt],
                         (err) => {
-                            if (err) return res.status(500).send('Error storing verification code: ' + err.message);
+                            if (err) {
+                                console.error('Verification code insertion error:', err.message, err.stack);
+                                return res.status(500).send('Error storing verification code: ' + err.message);
+                            }
 
                             // Send email
                             const mailOptions = {
@@ -463,7 +477,10 @@ app.post('/send-verification-code', (req, res) => {
                             };
 
                             transporter.sendMail(mailOptions, (error) => {
-                                if (error) return res.status(500).send('Error sending verification email: ' + error.message);
+                                if (error) {
+                                    console.error('Email sending error:', error.message, error.stack);
+                                    return res.status(500).send('Error sending verification email: ' + error.message);
+                                }
                                 res.send('Verification code sent');
                             });
                         }
@@ -881,9 +898,7 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
         }
 
         sharp(req.file.path)
-            .resize(200, 
-
-200)
+            .resize(200, 200)
             .jpeg({ quality: 80 })
             .toFile(`Uploads/thumbnail-${req.file.filename}`, (err) => {
                 if (err) {

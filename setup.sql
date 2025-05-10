@@ -67,6 +67,7 @@ CREATE TABLE messages (
     status ENUM('pending', 'responded') NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     responded_at TIMESTAMP NULL,
+    seen TINYINT DEFAULT 0,
     FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE SET NULL
 );
 
