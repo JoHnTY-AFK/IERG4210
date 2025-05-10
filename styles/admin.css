@@ -334,9 +334,7 @@ button:hover {
   background: #ffffff;
   transition: transform 0.2s ease, box-shadow 0.3s ease;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
   color: #1a1a2e;
 }
@@ -368,6 +366,15 @@ button:hover {
 }
 
 /* Messages List Styles */
+#message-list li {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  padding: 20px;
+}
+
+#message-list li:nth-child(even) {
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+}
+
 #message-list li p {
   margin: 5px 0;
   font-size: 1em;
@@ -382,6 +389,24 @@ button:hover {
 #message-list li small {
   color: #6b7280;
   font-size: 0.85em;
+}
+
+#message-list li .status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+#message-list li .status-badge.pending {
+  background: #fb7185;
+  color: #ffffff;
+}
+
+#message-list li .status-badge.responded {
+  background: #2dd4bf;
+  color: #1a1a2e;
 }
 
 /* Respond Form Styles */
@@ -415,6 +440,49 @@ button:hover {
 
 .respond-form button {
   width: 100%;
+}
+
+/* Notification Styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification.success {
+  background: #2dd4bf;
+  color: #1a1a2e;
+}
+
+.notification.error {
+  background: #fb7185;
+  color: #ffffff;
+}
+
+.notification #notification-close {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.2s ease;
+}
+
+.notification #notification-close:hover {
+  transform: rotate(90deg);
+}
+
+.notification #notification-message {
+  margin: 0;
+  font-size: 1em;
 }
 
 /* Footer */
@@ -501,6 +569,13 @@ footer p {
   #order-list li ul li {
       font-size: 0.85em;
   }
+
+  .notification {
+      top: 10px;
+      right: 10px;
+      width: 90%;
+      padding: 10px;
+  }
 }
 
 /* Animations */
@@ -523,6 +598,17 @@ form, .section-content, li, .card {
   from {
       opacity: 0;
       transform: translateX(-20px);
+  }
+  to {
+      opacity: 1;
+      transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+      opacity: 0;
+      transform: translateX(100%);
   }
   to {
       opacity: 1;

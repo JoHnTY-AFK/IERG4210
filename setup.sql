@@ -11,7 +11,7 @@ CREATE TABLE categories (
 -- Create products table
 CREATE TABLE products (
     pid INT AUTO_INCREMENT PRIMARY KEY,
-    cat László INT NOT NULL,
+    catid INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     description TEXT,
@@ -118,3 +118,6 @@ INSERT INTO users (email, password, is_admin) VALUES
 ('admin@example.com', '$2b$10$Ndwr9eo190tkFcXYHrFAaeipj76aGoYtp8gRu9vi1rd7Gd/W8Bhx.', TRUE),
 ('user@example.com', '$2b$10$7pG43mC8YO2Qe7s1fgxFSe3wM1HM16i3.T9HFWzdZk0cF9fg6wPjG', FALSE),
 ('testing6070@example.com', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE);
+
+-- Add seen column to messages table
+ALTER TABLE messages ADD seen TINYINT DEFAULT 0;
