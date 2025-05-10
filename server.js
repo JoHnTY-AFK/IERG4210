@@ -49,7 +49,7 @@ const generateVerificationCode = () => crypto.randomInt(100000, 999999).toString
 
 const sendVerificationEmail = async (email, code) => {
     // Mock email sending (replace with Nodemailer or your email service)
-    console.log(`Sending verification code ${code} to ${email}`);
+    console.log(`[Email Mock] Sending verification code ${code} to ${email}`);
     return true; // Assume success for now
 };
 
@@ -131,8 +131,9 @@ const validateCsrfToken = (req, res, next) => {
     const bodyToken = req.body.csrfToken || req.headers['x-csrf-token'] || req.cookies.csrfToken;
     if (!csrfToken || !bodyToken || csrfToken !== bodyToken) {
         console.error('CSRF token validation failed:', { csrfToken, bodyToken });
-        return res.status(403).send('CSRF token validation failed');
+        return res.status(403).json({ error: 'CSRF token validation failed' });
     }
+    console.log('CSRF token validated successfully');
     next();
 };
 
@@ -229,6 +230,7 @@ app.get('/public/admin.html', (req, res) => {
 
 // API Routes
 app.get('/csrf-token', (req, res) => {
+    console.log('CSRF token requested');
     res.json({ csrfToken: req.cookies.csrfToken });
 });
 
@@ -476,22 +478,27 @@ app.post('/login', validateCsrfToken, async (req, res) => {
 
 app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
     try {
+        console.log('Received request to send verification code:', req.body);
         const { email } = req.body;
         const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
         if (emailError) {
+            console.error('Email validation failed:', emailError);
             return res.status(400).json({ error: emailError });
         }
 
         const code = generateVerificationCode();
         const expiration = Date.now() + 10 * 60 * 1000; // 10 minutes expiration
         verificationCodes.set(email, { code, expiration });
+        console.log(`Generated verification code for ${email}: ${code}, expires at ${new Date(expiration)}`);
 
         const success = await sendVerificationEmail(email, code);
         if (!success) {
             verificationCodes.delete(email);
+            console.error('Failed to send verification code to:', email);
             return res.status(500).json({ error: 'Failed to send verification code' });
         }
 
+        console.log('Verification code sent successfully');
         res.json({ success: true });
     } catch (err) {
         console.error('Send verification code error:', err);
@@ -501,18 +508,29 @@ app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
 
 app.post('/signup', validateCsrfToken, async (req, res) => {
     try {
+        console.log('Received signup request:', req.body);
         const { email, password, verificationCode } = req.body;
-        console.log('Signup attempt:', { email, domain: req.hostname });
 
         const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
         const passwordError = validatePassword(password);
         if (emailError || passwordError) {
+            console.error('Input validation failed:', emailError || passwordError);
             return res.status(400).json({ error: emailError || passwordError });
         }
 
         const stored = verificationCodes.get(email);
-        if (!stored || stored.code !== verificationCode || Date.now() > stored.expiration) {
-            return res.status(400).json({ error: 'Invalid or expired verification code' });
+        if (!stored) {
+            console.error('No verification code found for email:', email);
+            return res.status(400).json({ error: 'No verification code found. Please request a code.' });
+        }
+        if (stored.code !== verificationCode) {
+            console.error('Invalid verification code for email:', email);
+            return res.status(400).json({ error: 'Invalid verification code' });
+        }
+        if (Date.now() > stored.expiration) {
+            console.error('Expired verification code for email:', email);
+            verificationCodes.delete(email);
+            return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
         }
 
         const connection = await db.getConnection();
@@ -523,6 +541,7 @@ app.post('/signup', validateCsrfToken, async (req, res) => {
             );
             if (existingUsers.length > 0) {
                 connection.release();
+                console.error('Email already registered:', email);
                 return res.status(400).json({ error: 'Email already registered' });
             }
 
@@ -534,6 +553,7 @@ app.post('/signup', validateCsrfToken, async (req, res) => {
                 'INSERT INTO users (email, password, auth_token, is_admin) VALUES (?, ?, ?, ?)',
                 [sanitizedEmail, hashedPassword, authToken, 0]
             );
+            console.log('User registered successfully:', sanitizedEmail, 'UserID:', result.insertId);
 
             verificationCodes.delete(email);
             connection.release();
