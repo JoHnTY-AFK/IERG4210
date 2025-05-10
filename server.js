@@ -413,56 +413,65 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
-    try {
-        const { email, firstName, lastName, password } = req.body;
-        console.log('Verification code request:', { email });
+app.post('/send-verification-code', (req, res) => {
+    const { email, firstName, lastName, password } = req.body;
+    const csrfToken = req.cookies.csrfToken;
 
-        const emailError = validateEmail(email);
-        const firstNameError = validateName(firstName, 'First Name');
-        const lastNameError = validateName(lastName, 'Last Name');
-        const passwordError = validatePassword(password);
-        if (emailError || firstNameError || lastNameError || passwordError) {
-            return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
-        }
-
-        const connection = await db.getConnection();
-        try {
-            const [existingUsers] = await connection.query('SELECT email FROM users WHERE email = ?', [email]);
-            if (existingUsers.length > 0) {
-                connection.release();
-                return res.status(400).json({ error: 'Email already registered' });
-            }
-
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
-            const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-            await connection.query(
-                'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
-                [email, code, expiresAt]
-            );
-
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Verify Your Email - Dummy Shopping Website',
-                text: `Your verification code is: ${code}. It expires in 10 minutes.`
-            };
-
-            await transporter.sendMail(mailOptions);
-            console.log('Verification code sent to:', email);
-
-            connection.release();
-            res.json({ success: true, message: 'Verification code sent to your email' });
-        } catch (err) {
-            connection.release();
-            console.error('Send verification code error:', err);
-            res.status(500).json({ error: 'Internal Server Error' });
-        }
-    } catch (err) {
-        console.error('Connection error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+    // Validate CSRF token
+    if (!csrfToken || csrfToken !== req.body.csrfToken) {
+        return res.status(403).send('Invalid CSRF token');
     }
+
+    // Validate input
+    if (!email || !firstName || !lastName || !password) {
+        return res.status(400).send('All fields are required');
+    }
+
+    // Check if email already exists
+    db.query('SELECT email FROM users WHERE email = ?', [email], (err, results) => {
+        if (err) return res.status(500).send('Database error');
+        if (results.length > 0) return res.status(400).send('Email already registered');
+
+        // Hash password
+        bcrypt.hash(password, 10, (err, hash) => {
+            if (err) return res.status(500).send('Error hashing password');
+
+            // Insert user into users table
+            db.query(
+                'INSERT INTO users (email, firstName, lastName, password, is_admin) VALUES (?, ?, ?, ?, FALSE)',
+                [email, firstName, lastName, hash],
+                (err) => {
+                    if (err) return res.status(500).send('Error creating user: ' + err.message);
+
+                    // Generate verification code
+                    const code = Math.floor(100000 + Math.random() * 900000).toString();
+                    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+                    // Insert verification code
+                    db.query(
+                        'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
+                        [email, code, expiresAt],
+                        (err) => {
+                            if (err) return res.status(500).send('Error storing verification code: ' + err.message);
+
+                            // Send email
+                            const mailOptions = {
+                                from: process.env.EMAIL_USER,
+                                to: email,
+                                subject: 'Verify Your Email - Dummy Shopping Website',
+                                text: `Your verification code is: ${code}. It expires in 10 minutes.`
+                            };
+
+                            transporter.sendMail(mailOptions, (error) => {
+                                if (error) return res.status(500).send('Error sending verification email: ' + error.message);
+                                res.send('Verification code sent');
+                            });
+                        }
+                    );
+                }
+            );
+        });
+    });
 });
 
 app.post('/verify-code', validateCsrfToken, async (req, res) => {
