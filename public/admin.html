@@ -223,7 +223,10 @@
 
             function loadMessages() {
                 fetch('/admin-messages', { credentials: 'include' })
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error('Failed to fetch messages');
+                        return res.json();
+                    })
                     .then(messages => {
                         const messageList = document.getElementById('message-list');
                         messageList.innerHTML = '';
@@ -232,20 +235,62 @@
                             li.innerHTML = DOMPurify.sanitize(`
                                 <p><strong>${msg.user_email}:</strong> ${msg.message}</p>
                                 <p><small>${new Date(msg.created_at).toLocaleString()}</small></p>
-                                ${msg.response ? `<p><strong>Response:</strong> ${msg.response}</p>
-                                <p><small>${new Date(msg.responded_at).toLocaleString()}</small></p>` : `
                                 <form class="respond-form" data-message-id="${msg.message_id}">
                                     <input type="hidden" name="csrfToken" value="${document.getElementById('product-csrfToken').value}">
                                     <textarea name="response" placeholder="Type your response..." required></textarea>
                                     <button type="submit">Respond</button>
-                                </form>`}
+                                </form>
                             `);
                             messageList.appendChild(li);
                         });
 
                         document.getElementById('total-messages').textContent = messages.length;
+
+                        // Dynamically bind respond form submissions
+                        document.querySelectorAll('.respond-form').forEach(form => {
+                            form.addEventListener('submit', async (e) => {
+                                e.preventDefault();
+                                await respondMessage(form);
+                            });
+                        });
                     })
-                    .catch(err => console.error('Messages fetch error:', err));
+                    .catch(err => {
+                        console.error('Messages fetch error:', err);
+                        document.getElementById('message-list').innerHTML = DOMPurify.sanitize('<p class="error">Error loading messages.</p>');
+                    });
+            }
+
+            async function respondMessage(form) {
+                const messageId = form.dataset.messageId;
+                const responseText = form.querySelector('textarea[name="response"]').value.trim();
+                if (!responseText) {
+                    alert('Response cannot be empty');
+                    return;
+                }
+
+                try {
+                    const csrfResponse = await fetch('/csrf-token', { credentials: 'include' });
+                    const csrfData = await csrfResponse.json();
+                    const csrfToken = csrfData.csrfToken;
+
+                    const response = await fetch('/respond-message', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                        body: JSON.stringify({ messageId, response: responseText }),
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'Failed to send response');
+                    }
+
+                    form.querySelector('textarea').value = '';
+                    loadMessages(); // Refresh messages list to remove responded message
+                } catch (err) {
+                    console.error('Respond message error:', err);
+                    alert('Error sending response: ' + err.message);
+                }
             }
 
             document.getElementById('product-form').addEventListener('submit', async (e) => {
@@ -470,5 +515,6 @@
             loadMessages();
         });
     </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93da17e96888bcb0',t:'MTc0Njg4Njk5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>

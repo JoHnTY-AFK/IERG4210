@@ -42,14 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Send message
     sendMessage.addEventListener('click', async () => {
         const message = chatInput.value.trim();
-        if (!message) return;
+        if (!message) {
+            chatMessages.innerHTML += '<p class="error">Message cannot be empty</p>';
+            return;
+        }
 
         try {
             await fetchCsrfToken();
             const response = await fetch('/send-message', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, csrfToken }),
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                body: JSON.stringify({ message }),
                 credentials: 'include'
             });
 
@@ -62,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchMessages();
         } catch (err) {
             console.error('Send message error:', err);
-            alert('Failed to send message: ' + err.message);
+            chatMessages.innerHTML += DOMPurify.sanitize(`<p class="error">Failed to send message: ${err.message}</p>`);
         }
     });
 
@@ -78,19 +81,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 messages.forEach(msg => {
                     const messageDiv = document.createElement('div');
                     messageDiv.className = 'chat-message';
-                    messageDiv.innerHTML = DOMPurify.sanitize(`
-                        <p><strong>You (${msg.user_email}):</strong> ${msg.message}</p>
-                        <p><small>${new Date(msg.created_at).toLocaleString()}</small></p>
-                        ${msg.response ? `<p><strong>Support:</strong> ${msg.response}</p>
-                        <p><small>${new Date(msg.responded_at).toLocaleString()}</small></p>` : ''}
-                    `);
+                    let messageContent = `
+                        <div class="message-type user-message">
+                            <p><strong>You (${msg.user_email || 'Guest'}):</strong> ${DOMPurify.sanitize(msg.message)}</p>
+                            <p><small>${new Date(msg.created_at).toLocaleString()}</small></p>
+                        </div>
+                    `;
+                    if (msg.response) {
+                        messageContent += `
+                            <div class="message-type admin-message">
+                                <p><strong>Support:</strong> ${DOMPurify.sanitize(msg.response)}</p>
+                                <p><small>${new Date(msg.responded_at).toLocaleString()}</small></p>
+                            </div>
+                        `;
+                    }
+                    messageDiv.innerHTML = DOMPurify.sanitize(messageContent);
                     chatMessages.appendChild(messageDiv);
                 });
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             })
             .catch(err => {
                 console.error('Messages fetch error:', err);
-                chatMessages.innerHTML = '<p>Error loading messages.</p>';
+                chatMessages.innerHTML = DOMPurify.sanitize('<p class="error">Error loading messages.</p>');
             });
     }
 

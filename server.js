@@ -64,7 +64,7 @@ app.use('/images', express.static(path.join(__dirname, 'images'), {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
     setHeaders: (res) => {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
@@ -637,12 +637,12 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
         sharp(req.file.path)
             .resize(200, 200)
             .jpeg({ quality: 80 })
-            .toFile(`uploads/thumbnail-${req.file.filename}`, (err) => {
+            .toFile(`Uploads/thumbnail-${req.file.filename}`, (err) => {
                 if (err) {
                     console.error('Image resize error:', err);
                     return res.status(500).send('Internal Server Error');
                 }
-                const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
+                const thumbnailPath = `/Uploads/thumbnail-${req.file.filename}`;
                 const sql = 'INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)';
                 db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath], (err) => {
                     if (err) {
@@ -687,12 +687,12 @@ app.put('/update-product/:pid', validateCsrfToken, authenticate, isAdmin, upload
         sharp(req.file.path)
             .resize(200, 200)
             .jpeg({ quality: 80 })
-            .toFile(`uploads/thumbnail-${req.file.filename}`, (err) => {
+            .toFile(`Uploads/thumbnail-${req.file.filename}`, (err) => {
                 if (err) {
                     console.error('Image resize error:', err);
                     return res.status(500).send('Internal Server Error');
                 }
-                const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
+                const thumbnailPath = `/Uploads/thumbnail-${req.file.filename}`;
                 const sql = 'UPDATE products SET catid=?, name=?, price=?, description=?, image=?, thumbnail=? WHERE pid=?';
                 db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath, pid], (err) => {
                     if (err) {
@@ -838,17 +838,23 @@ app.get('/admin-messages', authenticate, isAdmin, async (req, res) => {
 
 app.post('/respond-message', validateCsrfToken, authenticate, isAdmin, async (req, res) => {
     try {
+        console.log('Respond-message request:', req.body);
         const { messageId, response } = req.body;
         if (!messageId || !response) {
+            console.error('Missing messageId or response');
             return res.status(400).json({ error: 'Message ID and response are required' });
         }
 
         const messageError = validateTextInput(response, 1000, 'Response');
-        if (messageError) return res.status(400).json({ error: messageError });
+        if (messageError) {
+            console.error('Response validation error:', messageError);
+            return res.status(400).json({ error: messageError });
+        }
 
         const sanitizedResponse = sanitizeHtml(response);
         const [messages] = await db.query('SELECT * FROM messages WHERE message_id = ?', [messageId]);
         if (messages.length === 0) {
+            console.error('Message not found:', messageId);
             return res.status(404).json({ error: 'Message not found' });
         }
 
@@ -856,6 +862,7 @@ app.post('/respond-message', validateCsrfToken, authenticate, isAdmin, async (re
             'UPDATE messages SET response = ?, status = ?, responded_at = NOW() WHERE message_id = ?',
             [sanitizedResponse, 'responded', messageId]
         );
+        console.log('Message responded:', { messageId, response: sanitizedResponse });
         res.json({ success: true });
     } catch (err) {
         console.error('Respond message error:', err);
