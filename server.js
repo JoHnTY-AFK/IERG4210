@@ -435,7 +435,10 @@ app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        // Insert verification code
+        // Delete any existing verification codes for this email
+        await db.query('DELETE FROM verification_codes WHERE email = ?', [email]);
+
+        // Insert new verification code
         await db.query(
             'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
             [email, code, expiresAt]
@@ -450,11 +453,44 @@ app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
             text: `Your verification code is: ${code}. It expires in 10 minutes.`
         };
 
-        await transporter.sendMail(mailOptions);
-        res.json({ success: true });
+        try {
+            const info = await transporter.sendMail(mailOptions);
+            console.log('Email sent successfully:', info.messageId);
+            res.json({ success: true });
+        } catch (emailErr) {
+            console.error('Email sending failed:', emailErr);
+            // Rollback the verification code insertion
+            await db.query('DELETE FROM verification_codes WHERE email = ?', [email]);
+            return res.status(500).json({ error: `Failed to send verification email: ${emailErr.message}` });
+        }
     } catch (err) {
         console.error('Send verification code error:', err);
-        res.status(500).json({ error: 'An error occurred while sending the verification code' });
+        res.status(500).json({ error: `Internal server error: ${err.message}` });
+    }
+});
+
+// Debugging endpoint to test email sending
+app.post('/test-email', validateCsrfToken, async (req, res) => {
+    try {
+        const { email } = req.body;
+        const emailError = validateEmail(email);
+        if (emailError) {
+            return res.status(400).json({ error: emailError });
+        }
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Test Email - Dummy Shopping Website',
+            text: 'This is a test email to verify email configuration.'
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Test email sent successfully:', info.messageId);
+        res.json({ success: true, message: 'Test email sent' });
+    } catch (err) {
+        console.error('Test email error:', err);
+        res.status(500).json({ error: `Failed to send test email: ${err.message}` });
     }
 });
 
