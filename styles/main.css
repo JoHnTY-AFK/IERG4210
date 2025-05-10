@@ -517,8 +517,8 @@ header nav ul li a:hover {
   transform: translateY(0);
 }
 
-/* Login and Signup Pages */
-.login-wrapper, .signup-wrapper {
+/* Login Page */
+.login-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -526,7 +526,7 @@ header nav ul li a:hover {
   padding: 20px;
 }
 
-.login-container, .signup-container {
+.login-container {
   background: var(--card-bg);
   backdrop-filter: blur(10px);
   padding: 2.5rem;
@@ -538,7 +538,7 @@ header nav ul li a:hover {
   animation: fadeIn 0.5s ease;
 }
 
-.login-container h1, .signup-container h1 {
+.login-container h1 {
   font-family: 'Orbitron', sans-serif;
   text-align: center;
   margin-bottom: 1.5rem;
@@ -546,38 +546,15 @@ header nav ul li a:hover {
   font-size: 1.8rem;
 }
 
-.form-group {
-  position: relative;
-  margin-bottom: 1rem;
-}
-
-.login-container label, .signup-container label {
-  position: absolute;
-  top: 50%;
-  left: 16px;
-  transform: translateY(-50%);
-  color: rgba(230, 230, 250, 0.5); /* Match placeholder color */
+.login-container label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
   font-weight: 600;
-  font-size: 1rem;
-  pointer-events: none;
-  transition: var(--transition);
-}
-
-.login-container input:focus + label,
-.login-container input:not(:placeholder-shown) + label,
-.signup-container input:focus + label,
-.signup-container input:not(:placeholder-shown) + label {
-  top: 0;
-  font-size: 0.8rem;
-  color: var(--accent-color);
-  transform: translateY(0); /* Ensure label moves fully up */
 }
 
 .login-container input[type="email"],
-.login-container input[type="password"],
-.signup-container input[type="text"],
-.signup-container input[type="email"],
-.signup-container input[type="password"] {
+.login-container input[type="password"] {
   width: calc(100% - 2rem);
   padding: 12px 16px;
   margin-bottom: 1rem;
@@ -591,26 +568,18 @@ header nav ul li a:hover {
 }
 
 .login-container input[type="email"]:focus,
-.login-container input[type="password"]:focus,
-.signup-container input[type="text"]:focus,
-.signup-container input[type="email"]:focus,
-.signup-container input[type="password"]:focus {
+.login-container input[type="password"]:focus {
   border-color: var(--accent-color);
   box-shadow: 0 0 8px var(--glow-color);
   outline: none;
 }
 
 .login-container input[type="email"]::placeholder,
-.login-container input[type="password"]::placeholder,
-.signup-container input[type="text"]::placeholder,
-.signup-container input[type="email"]::placeholder,
-.signup-container input[type="password"]::placeholder {
+.login-container input[type="password"]::placeholder {
   color: rgba(230, 230, 250, 0.5);
-  opacity: 0; /* Hide placeholder to rely on label */
 }
 
-.login-container button[type="submit"],
-.signup-container button[type="submit"] {
+.login-container button[type="submit"] {
   width: 100%;
   padding: 12px;
   background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
@@ -624,10 +593,238 @@ header nav ul li a:hover {
   box-shadow: 0 0 10px var(--glow-color);
 }
 
-.login-container button[type="submit"]:hover,
-.signup-container button[type="submit"]:hover {
+.login-container button[type="submit"]:hover {
   transform: scale(1.02);
   box-shadow: 0 0 15px var(--glow-color);
+}
+
+/* Signup Page */
+.signup-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.signup-container {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: 2.5rem;
+  border-radius: 15px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 400px;
+  animation: fadeIn 0.5s ease;
+}
+
+.signup-container h1 {
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+  font-size: 1.8rem;
+}
+
+.form-group {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.signup-container input[type="text"],
+.signup-container input[type="email"],
+.signup-container input[type="password"] {
+  width: calc(100% - 2rem);
+  padding: 12px 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+  transition: var(--transition);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.signup-container input[type="text"]:focus,
+.signup-container input[type="email"]:focus,
+.signup-container input[type="password"]:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 8px var(--glow-color);
+  outline: none;
+}
+
+.signup-container input[type="text"]::placeholder,
+.signup-container input[type="email"]::placeholder,
+.signup-container input[type="password"]::placeholder {
+  color: rgba(230, 230, 250, 0.5);
+}
+
+.signup-container label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: var(--text-color);
+  font-weight: 600;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.signup-container input:focus + label,
+.signup-container input:not(:placeholder-shown) + label {
+  top: 0;
+  font-size: 0.8rem;
+  color: var(--accent-color);
+}
+
+.signup-container button#details-submit {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
+  color: var(--text-color);
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 0 10px var(--glow-color);
+}
+
+.signup-container button#details-submit:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px var(--glow-color);
+}
+
+.signup-container button#details-submit.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.password-strength {
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.password-strength.weak {
+  color: #ff4d4d;
+}
+
+.password-strength.medium {
+  color: #ffa500;
+}
+
+.password-strength.strong {
+  color: #4caf50;
+}
+
+.error {
+  color: #ff4d4d;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  display: none;
+}
+
+.error.visible {
+  display: block;
+}
+
+.notification-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.notification-modal.visible {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 15px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  animation: fadeIn 0.5s ease;
+}
+
+.modal-content h2 {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--text-color);
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.modal-content p {
+  color: var(--text-color);
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+.modal-content button#modal-continue {
+  padding: 10px 20px;
+  background: linear-gradient(90deg, var(--accent-color), var(--highlight-color));
+  color: var(--text-color);
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 0 10px var(--glow-color);
+}
+
+.modal-content button#modal-continue:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px var(--glow-color);
+}
+
+.back-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.back-link a {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.back-link a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .signup-container {
+    padding: 1.5rem;
+    max-width: 90%;
+  }
+
+  .signup-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .modal-content {
+    padding: 15px;
+    max-width: 80%;
+  }
 }
 
 /* Password Strength Indicator */
