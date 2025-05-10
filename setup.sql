@@ -24,6 +24,8 @@ CREATE TABLE products (
 CREATE TABLE users (
     userid INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     auth_token VARCHAR(255)
@@ -66,6 +68,16 @@ CREATE TABLE messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     responded_at TIMESTAMP NULL,
     FOREIGN KEY (user_email) REFERENCES users(email) ON DELETE SET NULL
+);
+
+-- Create verification_codes table for email verification
+CREATE TABLE verification_codes (
+    code_id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    FOREIGN KEY (email) REFERENCES users(email) ON DELETE CASCADE
 );
 
 -- Insert initial categories
@@ -114,10 +126,10 @@ INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES
 (3, 'Oud Perfume', 209.99, 'Luxury Oud Scent 75mL', '/images/product36.jpg', '/images/product36.jpg');
 
 -- Insert initial users (passwords hashed with bcrypt)
-INSERT INTO users (email, password, is_admin) VALUES
-('admin@example.com', '$2b$10$Ndwr9eo190tkFcXYHrFAaeipj76aGoYtp8gRu9vi1rd7Gd/W8Bhx.', TRUE),
-('user@example.com', '$2b$10$7pG43mC8YO2Qe7s1fgxFSe3wM1HM16i3.T9HFWzdZk0cF9fg6wPjG', FALSE),
-('testing6070@example.com', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE);
+INSERT INTO users (email, firstName, lastName, password, is_admin) VALUES
+('admin@example.com', 'Admin', 'User', '$2b$10$Ndwr9eo190tkFcXYHrFAaeipj76aGoYtp8gRu9vi1rd7Gd/W8Bhx.', TRUE),
+('user@example.com', 'John', 'Doe', '$2b$10$7pG43mC8YO2Qe7s1fgxFSe3wM1HM16i3.T9HFWzdZk0cF9fg6wPjG', FALSE),
+('testing6070@example.com', 'Test', 'User', '$2b$10$BrD1MfYbkFTJ5u6PfmBVGuzpOHSbh3FI2IgLBk./tv0oujXemR2Ra', FALSE);
 
 -- Add seen column to messages table
 ALTER TABLE messages ADD seen TINYINT DEFAULT 0;

@@ -11,6 +11,7 @@ const bcrypt = require('bcrypt');
 const sanitizeHtml = require('sanitize-html');
 const http = require('http');
 const fetch = require('node-fetch');
+const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -40,6 +41,15 @@ db.getConnection((err, connection) => {
     }
     console.log('Database connected successfully');
     connection.release();
+});
+
+// Nodemailer setup
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER || 'your-email@gmail.com',
+        pass: process.env.EMAIL_PASS || 'your-app-password'
+    }
 });
 
 // Middleware
@@ -168,6 +178,13 @@ const validateTextInput = (text, maxLength, fieldName) => {
     if (!text || typeof text !== 'string') return `${fieldName} is required`;
     if (text.length > maxLength) return `${fieldName} must be ${maxLength} characters or less`;
     if (!/^[a-zA-Z0-9\s\-,.?!@]+$/.test(text)) return `${fieldName} contains invalid characters`;
+    return null;
+};
+
+const validateName = (name, fieldName) => {
+    if (!name || typeof name !== 'string') return `${fieldName} is required`;
+    if (name.length > 50) return `${fieldName} must be 50 characters or less`;
+    if (!/^[a-zA-Z\s\-]+$/.test(name)) return `${fieldName} can only contain letters, spaces, or hyphens`;
     return null;
 };
 
@@ -396,6 +413,182 @@ app.get('/admin-orders', authenticate, isAdmin, async (req, res) => {
     }
 });
 
+app.post('/send-verification-code', validateCsrfToken, async (req, res) => {
+    try {
+        const { email, firstName, lastName, password } = req.body;
+        console.log('Verification code request:', { email });
+
+        const emailError = validateEmail(email);
+        const firstNameError = validateName(firstName, 'First Name');
+        const lastNameError = validateName(lastName, 'Last Name');
+        const passwordError = validatePassword(password);
+        if (emailError || firstNameError || lastNameError || passwordError) {
+            return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
+        }
+
+        const connection = await db.getConnection();
+        try {
+            const [existingUsers] = await connection.query('SELECT email FROM users WHERE email = ?', [email]);
+            if (existingUsers.length > 0) {
+                connection.release();
+                return res.status(400).json({ error: 'Email already registered' });
+            }
+
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+            await connection.query(
+                'INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)',
+                [email, code, expiresAt]
+            );
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Verify Your Email - Dummy Shopping Website',
+                text: `Your verification code is: ${code}. It expires in 10 minutes.`
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log('Verification code sent to:', email);
+
+            connection.release();
+            res.json({ success: true, message: 'Verification code sent to your email' });
+        } catch (err) {
+            connection.release();
+            console.error('Send verification code error:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        }
+    } catch (err) {
+        console.error('Connection error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/verify-code', validateCsrfToken, async (req, res) => {
+    try {
+        const { email, code, firstName, lastName, password } = req.body;
+        console.log('Verify code attempt:', { email, code });
+
+        const connection = await db.getConnection();
+        try {
+            const [codes] = await connection.query(
+                'SELECT * FROM verification_codes WHERE email = ? AND code = ? AND expires_at > NOW()',
+                [email, code]
+            );
+            if (codes.length === 0) {
+                connection.release();
+                return res.status(400).json({ error: 'Invalid or expired verification code' });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const authToken = crypto.randomBytes(32).toString('hex');
+            const sanitizedEmail = escapeHtml(email);
+            const sanitizedFirstName = escapeHtml(firstName);
+            const sanitizedLastName = escapeHtml(lastName);
+
+            await connection.query(
+                'INSERT INTO users (email, firstName, lastName, password, auth_token, is_admin) VALUES (?, ?, ?, ?, ?, ?)',
+                [sanitizedEmail, sanitizedFirstName, sanitizedLastName, hashedPassword, authToken, 0]
+            );
+
+            await connection.query('DELETE FROM verification_codes WHERE email = ?', [email]);
+
+            connection.release();
+
+            console.log('Setting authToken cookie for:', req.hostname);
+            res.cookie('authToken', authToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+                maxAge: 2 * 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            res.json({ 
+                success: true,
+                redirect: '/',
+                email: sanitizedEmail
+            });
+        } catch (err) {
+            connection.release();
+            console.error('Verify code error:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+        }
+    } catch (err) {
+        console.error('Connection error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/signup', validateCsrfToken, async (req, res) => {
+    try {
+        const { email, firstName, lastName, password } = req.body;
+        console.log('Signup attempt:', { email, domain: req.hostname });
+
+        const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
+        const firstNameError = validateName(firstName, 'First Name');
+        const lastNameError = validateName(lastName, 'Last Name');
+        const passwordError = validatePassword(password);
+        if (emailError || firstNameError || lastNameError || passwordError) {
+            return res.status(400).json({ error: emailError || firstNameError || lastNameError || passwordError });
+        }
+
+        const connection = await db.getConnection();
+        try {
+            const [existingUsers] = await connection.query(
+                'SELECT email FROM users WHERE email = ?',
+                [email]
+            );
+            if (existingUsers.length > 0) {
+                connection.release();
+                return res.status(400).json({ error: 'Email already registered' });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const authToken = crypto.randomBytes(32).toString('hex');
+            const sanitizedEmail = escapeHtml(email);
+            const sanitizedFirstName = escapeHtml(firstName);
+            const sanitizedLastName = escapeHtml(lastName);
+
+            const [result] = await connection.query(
+                'INSERT INTO users (email, firstName, lastName, password, auth_token, is_admin) VALUES (?, ?, ?, ?, ?, ?)',
+                [sanitizedEmail, sanitizedFirstName, sanitizedLastName, hashedPassword, authToken, 0]
+            );
+
+            connection.release();
+
+            console.log('Setting authToken cookie for:', req.hostname);
+            res.cookie('authToken', authToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+                maxAge: 2 * 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            res.json({ 
+                success: true,
+                redirect: '/',
+                email: sanitizedEmail
+            });
+        } catch (err) {
+            connection.release();
+            console.error('Signup error:', err.stack);
+            res.status(500).json({ 
+                error: 'Internal server error',
+                details: process.env.NODE_ENV === 'development' ? err.message : null
+            });
+        }
+    } catch (err) {
+        console.error('Connection error:', err.stack);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: process.env.NODE_ENV === 'development' ? err.message : null
+        });
+    }
+});
+
 app.post('/login', validateCsrfToken, async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -449,70 +642,6 @@ app.post('/login', validateCsrfToken, async (req, res) => {
         } catch (err) {
             connection.release();
             console.error('Login error:', err.stack);
-            res.status(500).json({ 
-                error: 'Internal server error',
-                details: process.env.NODE_ENV === 'development' ? err.message : null
-            });
-        }
-    } catch (err) {
-        console.error('Connection error:', err.stack);
-        res.status(500).json({ 
-            error: 'Internal server error',
-            details: process.env.NODE_ENV === 'development' ? err.message : null
-        });
-    }
-});
-
-app.post('/signup', validateCsrfToken, async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        console.log('Signup attempt:', { email, domain: req.hostname });
-
-        const emailError = validateEmail(email) || validateTextInput(email, 255, 'Email');
-        const passwordError = validatePassword(password);
-        if (emailError || passwordError) {
-            return res.status(400).json({ error: emailError || passwordError });
-        }
-
-        const connection = await db.getConnection();
-        try {
-            const [existingUsers] = await connection.query(
-                'SELECT email FROM users WHERE email = ?',
-                [email]
-            );
-            if (existingUsers.length > 0) {
-                connection.release();
-                return res.status(400).json({ error: 'Email already registered' });
-            }
-
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const authToken = crypto.randomBytes(32).toString('hex');
-            const sanitizedEmail = escapeHtml(email);
-
-            const [result] = await connection.query(
-                'INSERT INTO users (email, password, auth_token, is_admin) VALUES (?, ?, ?, ?)',
-                [sanitizedEmail, hashedPassword, authToken, 0]
-            );
-
-            connection.release();
-
-            console.log('Setting authToken cookie for:', req.hostname);
-            res.cookie('authToken', authToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 2 * 24 * 60 * 60 * 1000,
-                path: '/'
-            });
-
-            res.json({ 
-                success: true,
-                redirect: '/',
-                email: sanitizedEmail
-            });
-        } catch (err) {
-            connection.release();
-            console.error('Signup error:', err.stack);
             res.status(500).json({ 
                 error: 'Internal server error',
                 details: process.env.NODE_ENV === 'development' ? err.message : null
@@ -743,14 +872,16 @@ app.post('/add-product', validateCsrfToken, authenticate, isAdmin, upload.single
         }
 
         sharp(req.file.path)
-            .resize(200, 200)
+            .resize(200, 
+
+200)
             .jpeg({ quality: 80 })
             .toFile(`Uploads/thumbnail-${req.file.filename}`, (err) => {
                 if (err) {
                     console.error('Image resize error:', err);
                     return res.status(500).send('Internal Server Error');
                 }
-                const thumbnailPath = `/uploads/thumbnail-${req.file.filename}`;
+                const thumbnailPath = `/Uploads/thumbnail-${req.file.filename}`;
                 const sql = 'INSERT INTO products (catid, name, price, description, image, thumbnail) VALUES (?, ?, ?, ?, ?, ?)';
                 db.query(sql, [catid, sanitizedName, price, sanitizedDesc, imagePath, thumbnailPath], (err) => {
                     if (err) {
