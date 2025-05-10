@@ -69,7 +69,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'Uploads'), {
         res.set('Cache-Control', 'public, max-age=2592000'); // 30 days
     }
 }));
-app.use(express.static(__dirname, { index: false }));
+
+// Block access to server.js and other sensitive files
+app.use((req, res, next) => {
+    if (req.url.includes('.js') && !req.url.startsWith('/public/') && !req.url.startsWith('/images/') && !req.url.startsWith('/uploads/')) {
+        return res.status(403).send('Access Denied');
+    }
+    next();
+});
 
 // CSRF Protection
 const generateCsrfToken = () => crypto.randomBytes(16).toString('hex');
